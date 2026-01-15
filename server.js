@@ -3,7 +3,7 @@
  * Express server for production deployment on Railway
  */
 
-import { startServer } from './src/api/index.js';
+import { startServer } from './src/api/index.ts';
 
 // Start the server on Railway's provided port or default to 3001
 const PORT = process.env.PORT || 3001;

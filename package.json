@@ -8,8 +8,8 @@
     "build": "npx vite build",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "preview": "npx vite preview",
-    "start": "node server.js",
-    "api": "node server.js"
+    "start": "npx tsx server.js",
+    "api": "npx tsx server.js"
   },
   "dependencies": {
     "@types/mongoose": "^5.11.96",
