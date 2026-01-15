@@ -1,34 +1,48 @@
 /**
  * Vercel Serverless Function Handler
- * This file adapts the Express app to work with Vercel's serverless environment
+ * Wraps Express app for Vercel's serverless environment
  */
 
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import serverless from 'serverless-http';
 import { createApp } from '../src/api/index.js';
 import { connectDatabase } from '../src/api/config/database.js';
-
-// Create the Express app
-const app = createApp();
 
 // Cached database connection
 let isConnected = false;
 
-// Vercel serverless function handler
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  try {
-    // Connect to database if not already connected
-    if (!isConnected) {
+// Initialize database connection
+async function initDatabase() {
+  if (!isConnected) {
+    try {
       await connectDatabase();
       isConnected = true;
+      console.log('✅ Database connected for serverless function');
+    } catch (error) {
+      console.error('❌ Database connection failed:', error);
+      throw error;
     }
+  }
+}
 
-    // Handle the request with Express
-    app(req as any, res as any);
+// Create the Express app
+const app = createApp();
+
+// Wrap Express app with serverless-http
+const handler = serverless(app);
+
+// Export the Vercel handler
+export default async function(req: any, res: any) {
+  try {
+    // Ensure database is connected before handling request
+    await initDatabase();
+    
+    // Handle the request
+    return await handler(req, res);
   } catch (error) {
-    console.error('Serverless function error:', error);
-    res.status(500).json({
+    console.error('Serverless handler error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Internal server error',
+      message: 'Server initialization error',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
