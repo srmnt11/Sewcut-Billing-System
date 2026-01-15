@@ -1,5 +1,0 @@
-src/api
-node_modules
-.env
-.env.local
-*.log
