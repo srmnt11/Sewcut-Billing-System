@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "npx vite",
+    "dev:api": "tsx watch src/api/index.ts",
     "build": "npx vite build",
+    "build:api": "tsc --project tsconfig.api.json",
+    "vercel-build": "npm run build",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "preview": "npx vite preview"
   },
