@@ -3,15 +3,16 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const statusColors = {
-  paid: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  sent: 'bg-blue-100 text-blue-700 border-blue-200',
-  draft: 'bg-slate-100 text-slate-700 border-slate-200',
-  overdue: 'bg-red-100 text-red-700 border-red-200',
-  pending: 'bg-amber-100 text-amber-700 border-amber-200',
-  approved: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  rejected: 'bg-red-100 text-red-700 border-red-200'
+  paid: 'text-emerald-700',
+  sent: 'text-blue-700',
+  draft: 'text-slate-600',
+  overdue: 'text-rose-700',
+  pending: 'text-amber-700',
+  approved: 'text-emerald-700',
+  rejected: 'text-rose-700'
 };
 
 type Transaction = {
@@ -33,7 +34,7 @@ interface RecentTransactionsProps {
 
 export default function RecentTransactions({ transactions = [], title = "Recent Transactions" }: RecentTransactionsProps) {
   return (
-    <Card className="border-0 shadow-sm">
+    <Card className="neu-surface-soft">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg font-semibold">{title}</CardTitle>
       </CardHeader>
@@ -45,14 +46,10 @@ export default function RecentTransactions({ transactions = [], title = "Recent 
             transactions.map((transaction, index) => (
               <div 
                 key={transaction.id || index}
-                className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+                className="flex items-center justify-between p-4 rounded-xl neu-inset transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className={`p-2 rounded-lg ${
-                    transaction.type === 'income' 
-                      ? 'bg-emerald-100' 
-                      : 'bg-slate-200'
-                  }`}>
+                  <div className="p-2 rounded-lg neu-press">
                     {transaction.type === 'income' ? (
                       <ArrowUpRight className="w-4 h-4 text-emerald-600" />
                     ) : (
@@ -70,7 +67,7 @@ export default function RecentTransactions({ transactions = [], title = "Recent 
                   <p className="font-semibold text-slate-900">
                     ₱{(transaction.grandTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                   </p>
-                  <Badge variant="outline" className={statusColors[transaction.status] || statusColors.draft}>
+                  <Badge variant="outline" className={cn("neu-chip", statusColors[transaction.status] || statusColors.draft)}>
                     {transaction.status}
                   </Badge>
                 </div>

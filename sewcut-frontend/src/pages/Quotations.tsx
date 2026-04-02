@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
-import { useNotificationContext, NotificationHelpers } from '@/context/NotificationContext';
+import { useNotificationContext } from '@/context/NotificationContext';
 import { useActivity } from '@/context/ActivityContext';
 import { useSearchParams } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -20,11 +20,13 @@ import {
   Send,
   CheckCircle2,
   XCircle,
-  Zap
+  Zap,
+  Clock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,7 +51,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import PageHeader from '@/components/shared/PageHeader';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import QuotationForm from '@/components/quotations/QuotationForm';
@@ -118,7 +119,9 @@ export function Quotations() {
         try {
           await api.entities.Draft.delete(editingDraftId);
           queryClient.invalidateQueries({ queryKey: ['drafts'] });
-        } catch {}
+        } catch (error) {
+          console.warn('Failed to delete draft after quotation save:', error);
+        }
       }
       queryClient.invalidateQueries({ queryKey: ['quotations'] });
       setShowForm(false);
@@ -200,6 +203,7 @@ export function Quotations() {
     id: string;
     quotationNumber: string;
     companyName: string;
+    companyEmail?: string;
     items: any[];
     subtotal: number;
     discount: number;
@@ -264,7 +268,7 @@ export function Quotations() {
         icon: 'dollar',
       });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast.error('Failed to convert quotation to invoice');
     }
   });
@@ -308,7 +312,7 @@ export function Quotations() {
       setShowForm(false);
       setEditingQuotation(null);
       setEditingDraftId(null);
-    } catch (error) {
+    } catch {
       toast.error('Failed to save draft');
     }
   };
@@ -320,7 +324,16 @@ export function Quotations() {
   };
 
   const handleSendEmail = (quotation: QuotationType) => {
-    setEmailingQuotation(quotation);
+    const matchedClient = clients.find((client: any) => {
+      const clientName = client.companyName || client.name;
+      return clientName && quotation.companyName && clientName.toLowerCase() === quotation.companyName.toLowerCase();
+    });
+
+    setEmailingQuotation({
+      ...quotation,
+      companyEmail: quotation.companyEmail || matchedClient?.email || '',
+      billingNumber: quotation.quotationNumber,
+    } as any);
     setShowEmailDialog(true);
   };
 
@@ -376,13 +389,18 @@ export function Quotations() {
     toast.success(`Exported ${selected.length} quotations`);
   };
 
-  const handleVersionRestore = (versionId: string) => {
+  const handleVersionRestore = () => {
     toast.success('Version restored successfully');
     // In production, restore from backend 
   };
 
-  const handleVersionCompare = (v1: string, v2: string) => {
+  const handleVersionCompare = () => {
     toast.info('Version comparison coming soon');
+  };
+
+  const handleBulkDelete = () => {
+    selectedQuotations.forEach((id) => deleteMutation.mutate(id));
+    setSelectedQuotations([]);
   };
 
   const filteredQuotations = quotations.filter((quotation: any) => {
@@ -406,7 +424,54 @@ export function Quotations() {
     return matchesSearch && matchesStatus && matchesDateRange && matchesAmountRange && matchesAdvancedStatus;
   });
 
+  const toggleQuotationSelection = (quotationId: string) => {
+    setSelectedQuotations((prev) =>
+      prev.includes(quotationId) ? prev.filter((id) => id !== quotationId) : [...prev, quotationId]
+    );
+  };
+
+  const allFilteredSelected =
+    filteredQuotations.length > 0 && filteredQuotations.every((quotation: any) => selectedQuotations.includes(quotation.id));
+
+  const selectedFilteredCount = filteredQuotations.filter((quotation: any) => selectedQuotations.includes(quotation.id)).length;
+
+  const isPartiallyFilteredSelected = selectedFilteredCount > 0 && !allFilteredSelected;
+
+  const toggleSelectAllFiltered = (checked: boolean) => {
+    if (!checked) {
+      setSelectedQuotations([]);
+      return;
+    }
+    setSelectedQuotations(filteredQuotations.map((quotation: any) => quotation.id));
+  };
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setAdvancedFilters({});
+  };
+
   const columns = [
+    {
+      header: (
+        <Checkbox
+          checked={allFilteredSelected ? true : isPartiallyFilteredSelected ? 'indeterminate' : false}
+          onCheckedChange={(checked) => toggleSelectAllFiltered(!!checked)}
+          aria-label="Select all quotations"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      cell: (row: any) => (
+        <Checkbox
+          checked={selectedQuotations.includes(row.id)}
+          onCheckedChange={() => toggleQuotationSelection(row.id)}
+          aria-label={`Select ${row.quotationNumber}`}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ),
+      className: 'w-[56px]',
+      cellClassName: 'w-[56px]'
+    },
     {
       header: 'Quotation',
       cell: (row: any) => (
@@ -449,33 +514,33 @@ export function Quotations() {
       cell: (row: { status: any; convertedToInvoice: any; id?: string; quotationNumber?: string; clientName?: string; items?: any[]; subtotal?: number; discount?: number; total?: number; createdAt?: string | undefined; validUntil?: string | undefined; notes?: string | undefined; }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
               <MoreHorizontal className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => row.id && handleEdit(row as QuotationType)}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); row.id && handleEdit(row as QuotationType); }}>
               <Eye className="w-4 h-4 mr-2" /> View / Edit
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => row.id && handlePreviewPDF(row as QuotationType)}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); row.id && handlePreviewPDF(row as QuotationType); }}>
               <FileText className="w-4 h-4 mr-2" /> Preview PDF
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setViewingVersions(row as QuotationType)}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setViewingVersions(row as QuotationType); }}>
               <History className="w-4 h-4 mr-2" /> Version History
             </DropdownMenuItem>
-            {(row.status === 'Draft') && (
-              <DropdownMenuItem onClick={() => row.id && handleSendEmail(row as QuotationType)}>
-                <Mail className="w-4 h-4 mr-2" /> Send to Client
+            {(['Draft', 'Pending', 'Sent'].includes(row.status)) && (
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); row.id && handleSendEmail(row as QuotationType); }}>
+                <Mail className="w-4 h-4 mr-2" /> {row.status === 'Sent' ? 'Resend to Client' : 'Send to Client'}
               </DropdownMenuItem>
             )}
             {row.status === 'Accepted' && (
-              <DropdownMenuItem onClick={() => row.id && convertToInvoiceMutation.mutate(row as QuotationType)}>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); row.id && convertToInvoiceMutation.mutate(row as QuotationType); }}>
                 <ArrowRightCircle className="w-4 h-4 mr-2" /> Convert to Invoice
               </DropdownMenuItem>
             )}
             {row.status !== 'Accepted' && (
               <DropdownMenuItem 
-                onClick={() => setDeleteQuotation(row as QuotationType)}
+                onClick={(e) => { e.stopPropagation(); setDeleteQuotation(row as QuotationType); }}
                 className="text-red-600"
               >
                 <Trash2 className="w-4 h-4 mr-2" /> Delete
@@ -488,33 +553,62 @@ export function Quotations() {
   ];
 
   const totalQuotationValue = quotations.reduce((sum: number, q: any) => sum + (parseFloat(q.grandTotal) || 0), 0);
+  const acceptedCount = quotations.filter((q: any) => q.status === 'Accepted').length;
+  const pendingCount = quotations.filter((q: any) => q.status === 'Pending' || q.status === 'Sent' || q.status === 'Draft').length;
 
   return (
     <div className="space-y-6">
       {/* ===== HERO HEADER ===== */}
-      <div className="relative rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+      <div className="relative neu-hero overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-orb1" />
-          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl animate-orb2" />
-          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-blue-500/8 rounded-full blur-2xl animate-orb3" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/60 rounded-full blur-3xl animate-orb1" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-white/50 rounded-full blur-3xl animate-orb2" />
+          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
-        <div className="relative z-10 px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative z-10 hero-content px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <FileCheck className="w-5 h-5 text-amber-400" />
-              <span className="text-amber-400 text-sm font-medium">Quotations</span>
+              <FileCheck className="w-5 h-5 text-slate-500" />
+              <span className="text-slate-500 text-sm font-medium">Quotations</span>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-1">Quotation Management</h1>
-            <p className="text-slate-400 text-base">
-              {quotations.length} quotations &middot; ₱{totalQuotationValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} total value
-            </p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-1">Quotation Management</h1>
+            <div className="hero-stat-row flex items-center gap-6 mt-5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <FileCheck className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{quotations.length}</p>
+                  <p className="text-slate-500 text-xs">Total</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{acceptedCount}</p>
+                  <p className="text-slate-500 text-xs">Accepted</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{pendingCount}</p>
+                  <p className="text-slate-500 text-xs">Pending</p>
+                </div>
+              </div>
+            </div>
           </div>
           <Button
             size="lg"
             onClick={() => { setEditingQuotation(null); setShowForm(true); }}
-            className="bg-amber-500 hover:bg-amber-400 text-white font-semibold shadow-lg shadow-amber-500/20 transition-all hover:shadow-amber-500/30 hover:scale-[1.02]"
+            className="text-slate-700"
           >
             <FileCheck className="w-4 h-4 mr-2" />
             New Quotation
@@ -522,55 +616,13 @@ export function Quotations() {
         </div>
       </div>
 
-      {/* ===== PIPELINE ===== */}
-      {quotations.length > 0 && (
-        <Card className="border-0 shadow-sm overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-500" />
-                  Quotation Pipeline
-              </CardTitle>
-            </CardHeader>
-          <CardContent className="py-4">
-            <div className="flex items-center gap-2 overflow-x-auto py-1">
-              {[
-                { label: 'Draft', count: quotations.filter((q: any) => q.status === 'Draft').length, color: 'bg-slate-100 text-slate-700 border-slate-200', icon: <FileText className="w-3.5 h-3.5" /> },
-                { label: 'Pending', count: quotations.filter((q: any) => q.status === 'Pending').length, color: 'bg-amber-100 text-amber-700 border-amber-200', icon: <FileCheck className="w-3.5 h-3.5" /> },
-                { label: 'Sent', count: quotations.filter((q: any) => q.status === 'Sent').length, color: 'bg-blue-100 text-blue-700 border-blue-200', icon: <Send className="w-3.5 h-3.5" /> },
-                { label: 'Accepted', count: quotations.filter((q: any) => q.status === 'Accepted').length, color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
-                { label: 'Rejected', count: quotations.filter((q: any) => q.status === 'Rejected').length, color: 'bg-red-100 text-red-700 border-red-200', icon: <XCircle className="w-3.5 h-3.5" /> },
-              ].map((stage, idx, arr) => (
-                <React.Fragment key={stage.label}>
-                  <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border ${stage.color} min-w-[130px] transition-transform hover:scale-105`}>
-                    {stage.icon}
-                    <div>
-                      <p className="text-xs font-medium opacity-70">{stage.label}</p>
-                      <p className="text-lg font-bold leading-none">{stage.count}</p>
-                    </div>
-                  </div>
-                  {idx < arr.length - 1 && (
-                    <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Bulk Actions */}
       {selectedQuotations.length > 0 && (
         <BulkActions
           selectedCount={selectedQuotations.length}
           onExport={handleBulkExport}
           onImport={(file) => toast.info('Import feature coming soon')}
-          onBulkDelete={() => {
-            selectedQuotations.forEach(id => {
-              // Delete logic would go here
-            });
-            setSelectedQuotations([]);
-            toast.success('Quotations deleted');
-          }}
+          onBulkDelete={handleBulkDelete}
           onBulkStatusChange={(status) => {
             selectedQuotations.forEach(id => {
               const quotation = quotations.find((q: any) => q.id === id);
@@ -586,30 +638,29 @@ export function Quotations() {
       )}
 
       {/* Quick Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input
-            placeholder="Search quotations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search quotations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Draft">Draft</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Sent">Sent</SelectItem>
-            <SelectItem value="Accepted">Accepted</SelectItem>
-            <SelectItem value="Rejected">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClearFilters}
+            disabled={!searchTerm.trim() && statusFilter === 'all' && Object.keys(advancedFilters).length === 0}
+            className="rounded-xl text-xs h-9"
+          >
+            Clear Filters
+          </Button>
+        </div>
       </div>
 
       {/* Advanced Filters */}
@@ -622,7 +673,7 @@ export function Quotations() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {[
           { label: 'Total', count: quotations.length, color: 'text-slate-900', bg: 'bg-slate-50', icon: <FileCheck className="w-4 h-4 text-slate-400" /> },
           { label: 'Draft', count: quotations.filter((q: any) => q.status === 'Draft').length, color: 'text-slate-600', bg: 'bg-slate-50', icon: <FileText className="w-4 h-4 text-slate-400" /> },
@@ -630,9 +681,9 @@ export function Quotations() {
           { label: 'Sent', count: quotations.filter((q: any) => q.status === 'Sent').length, color: 'text-blue-600', bg: 'bg-blue-50', icon: <Send className="w-4 h-4 text-blue-500" /> },
           { label: 'Accepted', count: quotations.filter((q: any) => q.status === 'Accepted').length, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" /> },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white rounded-2xl p-4 border border-slate-200 hover:shadow-md transition-all duration-300 group">
+          <div key={stat.label} className="neu-surface-soft p-4 transition-all duration-300 group">
             <div className="flex items-center gap-2 mb-2">
-              <div className={`p-1.5 rounded-lg ${stat.bg} group-hover:scale-110 transition-transform`}>{stat.icon}</div>
+              <div className="p-1.5 rounded-lg neu-press group-hover:scale-110 transition-transform">{stat.icon}</div>
               <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
             </div>
             <p className={`text-2xl font-bold ${stat.color}`}>{stat.count}</p>
@@ -646,6 +697,7 @@ export function Quotations() {
         data={filteredQuotations}
         isLoading={isLoading}
         emptyMessage="No quotations found. Create your first quotation to get started."
+        onRowClick={(row: any) => toggleQuotationSelection(row.id)}
       />
 
       {/* Form Modal */}
@@ -673,12 +725,13 @@ export function Quotations() {
         onSend={handleEmailSend}
         billing={emailingQuotation as any}
         isLoading={sendEmailMutation.isPending}
+        documentType="Quotation"
       />
 
       {/* Version History Dialog */}
       {viewingVersions && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full m-4 max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/35 backdrop-blur-[2px] flex items-center justify-center z-50">
+          <div className="neu-surface-soft p-6 max-w-2xl w-full m-4 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">{viewingVersions.quotationNumber} - Version History</h3>
               <Button variant="ghost" size="icon" onClick={() => setViewingVersions(null)}>

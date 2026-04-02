@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'suppliers',
     'analytics',
     'billing_drafts',
+    'delivery_receipts',
 ]
 
 MIDDLEWARE = [

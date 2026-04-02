@@ -43,12 +43,28 @@ export default function InvoiceForm({
   };
 
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [selectedQuotationId, setSelectedQuotationId] = useState<string>('');
+  const [isAutofilling, setIsAutofilling] = useState(false);
+
+  type QuotationAutofillSource = {
+    id: string;
+    quotationNumber: string;
+    companyName: string;
+    quotationDate: string;
+    grandTotal: number;
+  };
 
   const { data: nextNumberData } = useQuery<{ number: string }>({
     queryKey: ['billing-next-number'],
     queryFn: () => api.get('/api/billings/next-number/') as Promise<{ number: string }>,
     enabled: open && !invoice,
     staleTime: 0,
+  });
+
+  const { data: quotationSources = [] } = useQuery<QuotationAutofillSource[]>({
+    queryKey: ['billing-autofill-sources'],
+    queryFn: () => api.get('/api/billings/autofill_sources/') as Promise<QuotationAutofillSource[]>,
+    enabled: open && !invoice,
   });
   const [formData, setFormData] = useState({
     billingNumber: '',
@@ -76,6 +92,55 @@ export default function InvoiceForm({
         attentionPerson: client.contactPerson || '',
         clientEmail: client.email || ''
       }));
+    }
+  };
+
+  const handleQuotationAutofill = async (quotationId: string) => {
+    setSelectedQuotationId(quotationId);
+    if (!quotationId) {
+      return;
+    }
+
+    setIsAutofilling(true);
+    try {
+      const payload = await api.get(`/api/billings/autofill_from_quotation/?quotation_id=${quotationId}`) as any;
+      const mappedItems = (payload.items || []).length
+        ? payload.items.map((item: any) => ({
+            id: undefined,
+            description: item.description || '',
+            quantity: parseFloat(item.quantity) || 1,
+            unitPrice: parseFloat(item.unitPrice) || 0,
+            lineTotal: parseFloat(item.total) || 0,
+          }))
+        : [{ id: undefined, description: '', quantity: 1, unitPrice: 0, lineTotal: 0 }];
+
+      setFormData((prev) => ({
+        ...prev,
+        companyName: payload.companyName || '',
+        billingDate: payload.billingDate || prev.billingDate,
+        address: payload.companyAddress || '',
+        contactNumber: payload.companyPhone || '',
+        attentionPerson: payload.attentionPerson || '',
+        clientEmail: payload.companyEmail || '',
+        items: mappedItems,
+        discount: parseFloat(payload.discount) || 0,
+        notes: payload.notes || '',
+      }));
+
+      const matchedClient = clients.find((client) => {
+        const candidateId = client.id || client._id;
+        return String(candidateId) === String(payload.client);
+      });
+      if (matchedClient) {
+        setSelectedClientId(String(matchedClient.id || matchedClient._id));
+      }
+
+      toast.success('Invoice form auto-filled from quotation');
+    } catch (error) {
+      console.error('Failed to autofill invoice from quotation:', error);
+      toast.error('Failed to auto-fill from quotation');
+    } finally {
+      setIsAutofilling(false);
     }
   };
 
@@ -119,6 +184,7 @@ export default function InvoiceForm({
         notes: ''
       });
       setSelectedClientId('');
+      setSelectedQuotationId('');
     }
   }, [invoice, open, clients, nextNumberData]);
 
@@ -178,6 +244,7 @@ export default function InvoiceForm({
       notes: formData.notes || '',
       terms: '',
       status: 'Pending',
+      sourceQuotationId: selectedQuotationId || invoice?.sourceQuotationId || null,
       items: formData.items.map(item => ({
         description: item.description,
         quantity: item.quantity,
@@ -200,7 +267,7 @@ export default function InvoiceForm({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl neu-press flex items-center justify-center">
               <Receipt className="w-5 h-5 text-amber-600" />
             </div>
             {!invoice ? 'Create New Invoice' : isEditingDraft ? 'Edit Draft Invoice' : isEditable ? 'Edit Invoice' : 'View Invoice'}
@@ -215,7 +282,7 @@ export default function InvoiceForm({
               <Input
                 value={formData.billingNumber}
                 readOnly
-                className="mt-1 bg-slate-50 text-slate-500 cursor-not-allowed"
+                className="mt-1 text-slate-500 cursor-not-allowed"
               />
             </div>
             <div>
@@ -231,8 +298,31 @@ export default function InvoiceForm({
           </div>
 
           {/* Client Selection */}
-          <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="space-y-4 p-4 neu-inset rounded-xl">
             <Label className="text-base font-semibold">Client Information</Label>
+            {isEditable && !invoice && (
+              <div>
+                <Label>Auto-fill From Approved Quotation</Label>
+                <Select value={selectedQuotationId} onValueChange={handleQuotationAutofill}>
+                  <SelectTrigger className="mt-1" disabled={isAutofilling}>
+                    <SelectValue placeholder={isAutofilling ? 'Applying quotation...' : 'Select quotation to auto-fill (optional)'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {quotationSources.length === 0 ? (
+                      <div className="p-4 text-sm text-slate-500 text-center">
+                        No approved quotations available.
+                      </div>
+                    ) : (
+                      quotationSources.map((quotation) => (
+                        <SelectItem key={quotation.id} value={String(quotation.id)}>
+                          {quotation.quotationNumber} - {quotation.companyName}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             {isEditable && !invoice ? (
               <div>
                 <Label>Select Client *</Label>
@@ -258,7 +348,7 @@ export default function InvoiceForm({
             ) : (
               <div>
                 <Label>Client</Label>
-                <div className="mt-1 p-2 bg-white rounded border border-slate-200">
+                <div className="mt-1 p-3 neu-inset rounded-xl">
                   <p className="font-medium">{formData.companyName || 'No client selected'}</p>
                 </div>
               </div>
@@ -318,7 +408,7 @@ export default function InvoiceForm({
                 {isEditable && <div className="w-9" />}
               </div>
               {formData.items.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start p-4 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                <div key={index} className="flex gap-3 items-start p-4 neu-inset rounded-xl">
                   <div className="flex-1">
                     <Input
                       placeholder="Description"
@@ -364,28 +454,28 @@ export default function InvoiceForm({
           </div>
 
           {/* Totals */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-6 shadow-lg">
+          <div className="neu-surface-soft text-slate-700 rounded-2xl p-6">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-slate-300">Subtotal</span>
-                <span>₱{subtotal.toFixed(2)}</span>
+                <span className="text-slate-500">Subtotal</span>
+                <span className="text-slate-800 font-semibold">₱{subtotal.toFixed(2)}</span>
               </div>
 
-              <div className="border-t border-slate-700 pt-2 mt-2">
-                <div className="flex justify-between text-xl font-bold">
+              <div className="border-t border-white/60 pt-2 mt-2">
+                <div className="flex justify-between text-xl font-bold text-slate-800">
                   <span>Grand Total</span>
                   <span>₱{grandTotal.toFixed(2)}</span>
                 </div>
               </div>
-              <div className="border-t border-slate-700 pt-3 mt-3">
-                <p className="text-xs text-slate-400 mb-2">Payment Schedule (50% Downpayment)</p>
+              <div className="border-t border-white/60 pt-3 mt-3">
+                <p className="text-xs text-slate-500 mb-2">Payment Schedule (50% Downpayment)</p>
                 <div className="flex justify-between">
-                  <span className="text-amber-400">↓ 50% Downpayment</span>
-                  <span className="font-semibold text-amber-400">₱{downpayment.toFixed(2)}</span>
+                  <span className="text-amber-600">↓ 50% Downpayment</span>
+                  <span className="font-semibold text-amber-600">₱{downpayment.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between mt-1">
-                  <span className="text-blue-400">↓ Remaining Balance (50%)</span>
-                  <span className="font-semibold text-blue-400">₱{remainingBalance.toFixed(2)}</span>
+                  <span className="text-blue-600">↓ Remaining Balance (50%)</span>
+                  <span className="font-semibold text-blue-600">₱{remainingBalance.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -405,7 +495,7 @@ export default function InvoiceForm({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-between gap-3 pt-4 border-t border-slate-200/80">
+          <div className="flex justify-between gap-3 pt-4 border-t border-white/60">
             <Button variant="outline" onClick={onClose} className="rounded-xl">
               <X className="w-4 h-4 mr-2" /> {isEditable ? 'Cancel' : 'Close'}
             </Button>
@@ -432,6 +522,7 @@ export default function InvoiceForm({
                         notes: formData.notes || '',
                         terms: '',
                         status: 'Pending',
+                        sourceQuotationId: selectedQuotationId || invoice?.sourceQuotationId || null,
                         items: formData.items.map(item => ({
                           description: item.description,
                           quantity: item.quantity,
@@ -448,7 +539,7 @@ export default function InvoiceForm({
                 <Button 
                   onClick={handleSubmit}
                   disabled={isLoading}
-                  className="bg-amber-500 hover:bg-amber-600 rounded-xl shadow-sm"
+                  className="rounded-xl"
                 >
                   <Save className="w-4 h-4 mr-2" /> 
                   {isLoading ? 'Saving...' : 'Save Invoice'}

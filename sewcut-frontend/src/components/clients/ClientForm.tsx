@@ -83,7 +83,7 @@ export default function ClientForm({
 
         <div className="space-y-6 mt-4">
           {/* Company Info */}
-          <div className="space-y-4 p-4 bg-slate-50/80 rounded-xl border border-slate-200/80">
+          <div className="space-y-4 p-4 neu-inset rounded-xl border border-white/60">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Building2 className="w-4 h-4 text-amber-500" />
               Company Information
@@ -98,7 +98,7 @@ export default function ClientForm({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Email</Label>
                 <Input
@@ -122,7 +122,7 @@ export default function ClientForm({
           </div>
 
           {/* Contact Person */}
-          <div className="space-y-4 p-4 bg-slate-50/80 rounded-xl border border-slate-200/80">
+          <div className="space-y-4 p-4 neu-inset rounded-xl border border-white/60">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <User className="w-4 h-4 text-blue-500" />
               Contact Person
@@ -137,7 +137,7 @@ export default function ClientForm({
           </div>
 
           {/* Address */}
-          <div className="space-y-4 p-4 bg-slate-50/80 rounded-xl border border-slate-200/80">
+          <div className="space-y-4 p-4 neu-inset rounded-xl border border-white/60">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <MapPin className="w-4 h-4 text-emerald-500" />
               Address
@@ -150,7 +150,7 @@ export default function ClientForm({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>City</Label>
                 <Input
@@ -200,7 +200,7 @@ export default function ClientForm({
             />
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-200/80">
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/60">
             <Button variant="outline" onClick={onClose} className="rounded-xl">
               <X className="w-4 h-4 mr-2" /> Cancel
             </Button>

@@ -188,6 +188,11 @@ export function Suppliers() {
     setSelectedSuppliers([]);
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setAdvancedFilters({});
+  };
+
   const filteredSuppliers = suppliers.filter((supplier: any) => {
     const matchesSearch = 
       supplier.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -201,6 +206,8 @@ export function Suppliers() {
     
     return matchesSearch && matchesCategory && matchesStatus;
   });
+  const activeSupplierCount = suppliers.filter((s: any) => s.status === 'active').length;
+  const supplierCategoryCount = new Set(suppliers.map((s: any) => s.category).filter(Boolean)).size;
 
   const columns = [
     {
@@ -289,31 +296,58 @@ export function Suppliers() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 compact-page">
       {/* ===== HERO HEADER ===== */}
-      <div className="relative rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+      <div className="relative neu-hero overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-orb1" />
-          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl animate-orb2" />
-          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-blue-500/8 rounded-full blur-2xl animate-orb3" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/60 rounded-full blur-3xl animate-orb1" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-white/50 rounded-full blur-3xl animate-orb2" />
+          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
-        <div className="relative z-10 px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative z-10 hero-content px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Truck className="w-5 h-5 text-amber-400" />
-              <span className="text-amber-400 text-sm font-medium">Suppliers</span>
+              <Truck className="w-5 h-5 text-slate-500" />
+              <span className="text-slate-500 text-sm font-medium">Suppliers</span>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-1">Supplier Network</h1>
-            <p className="text-slate-400 text-base">
-              {suppliers.length} suppliers across {new Set(suppliers.map((s: any) => s.category).filter(Boolean)).size} categories
-            </p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-1">Supplier Network</h1>
+            <div className="hero-stat-row flex items-center gap-6 mt-5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <Truck className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{suppliers.length}</p>
+                  <p className="text-slate-500 text-xs">Total</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{activeSupplierCount}</p>
+                  <p className="text-slate-500 text-xs">Active</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <Package className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{supplierCategoryCount}</p>
+                  <p className="text-slate-500 text-xs">Categories</p>
+                </div>
+              </div>
+            </div>
           </div>
           <Button
             size="lg"
             onClick={() => { setEditingSupplier(null); setShowForm(true); }}
-            className="bg-amber-500 hover:bg-amber-400 text-white font-semibold shadow-lg shadow-amber-500/20 transition-all hover:shadow-amber-500/30 hover:scale-[1.02]"
+            className="text-slate-700"
           >
             <Truck className="w-4 h-4 mr-2" />
             Add Supplier
@@ -322,14 +356,29 @@ export function Suppliers() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <Input
-          placeholder="Search suppliers..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search suppliers..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClearFilters}
+            disabled={!searchTerm.trim() && Object.keys(advancedFilters).length === 0}
+            className="rounded-xl text-xs h-9"
+          >
+            Clear Filters
+          </Button>
+        </div>
       </div>
 
       {/* Bulk Actions */}
@@ -362,7 +411,7 @@ export function Suppliers() {
       />
 
       {/* Stats by Category */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 compact-grid-5">
         {[
           { label: 'Total', value: suppliers.length, color: 'text-slate-900', bg: 'bg-slate-50', iconColor: 'text-slate-400' },
           { label: 'Fabric', value: suppliers.filter((s: any) => s.category === 'fabric').length, color: 'text-purple-600', bg: 'bg-purple-50', iconColor: 'text-purple-500' },
@@ -370,11 +419,10 @@ export function Suppliers() {
           { label: 'Packaging', value: suppliers.filter((s: any) => s.category === 'packaging').length, color: 'text-amber-600', bg: 'bg-amber-50', iconColor: 'text-amber-500' },
           { label: 'Equipment', value: suppliers.filter((s: any) => s.category === 'equipment').length, color: 'text-slate-600', bg: 'bg-slate-100', iconColor: 'text-slate-500' },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white rounded-2xl p-4 border border-slate-200 hover:shadow-md transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute -bottom-6 -right-6 w-20 h-20 rounded-full bg-slate-100/50 group-hover:scale-125 transition-transform duration-500" />
+          <div key={stat.label} className="neu-surface-soft p-3 sm:p-4 transition-all duration-300 group relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-lg ${stat.bg} group-hover:scale-110 transition-transform`}>
+                <div className="p-1.5 rounded-lg neu-press group-hover:scale-110 transition-transform">
                   <Package className={`w-3.5 h-3.5 ${stat.iconColor}`} />
                 </div>
                 <p className="text-sm text-slate-500 font-medium">{stat.label}</p>

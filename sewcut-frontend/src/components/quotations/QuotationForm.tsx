@@ -13,6 +13,14 @@ import { api } from '@/lib/api-client';
 type Client = {
   id: string;
   name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  contactPerson?: string;
+  companyName?: string;
+  _id?: string;
   [key: string]: any;
 };
 
@@ -115,9 +123,15 @@ export default function QuotationForm({
     setSelectedClientId(clientId);
     const client = clients.find(c => (c.id || c._id) === clientId);
     if (client) {
+      const resolvedCompanyName = client.name || client.companyName || '';
+      const resolvedAddress = [client.address, client.city, client.country].filter(Boolean).join(', ');
+
       setFormData(prev => ({
         ...prev,
-        clientName: client.name || ''
+        clientName: resolvedCompanyName,
+        coverLetterCompany: prev.coverLetterCompany || resolvedCompanyName,
+        coverLetterRecipient: prev.coverLetterRecipient || client.contactPerson || '',
+        coverLetterAddress: prev.coverLetterAddress || resolvedAddress,
       }));
     }
   };
@@ -253,7 +267,7 @@ export default function QuotationForm({
               <Label className="text-base font-semibold">Cover Letter</Label>
               <span className="text-xs text-slate-400">(included in PDF)</span>
             </div>
-            <div className="space-y-3 p-4 bg-amber-50/50 rounded-xl border border-amber-200/60">
+            <div className="space-y-3 p-4 neu-inset rounded-xl border border-white/60">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-slate-500">Recipient Name</Label>
@@ -261,7 +275,7 @@ export default function QuotationForm({
                     placeholder="e.g. Juan Dela Cruz"
                     value={formData.coverLetterRecipient}
                     onChange={(e) => setFormData(prev => ({ ...prev, coverLetterRecipient: e.target.value }))}
-                    className="mt-1 bg-white"
+                    className="mt-1"
                   />
                 </div>
                 <div>
@@ -270,7 +284,7 @@ export default function QuotationForm({
                     placeholder="e.g. Purchasing Manager"
                     value={formData.coverLetterRecipientTitle}
                     onChange={(e) => setFormData(prev => ({ ...prev, coverLetterRecipientTitle: e.target.value }))}
-                    className="mt-1 bg-white"
+                    className="mt-1"
                   />
                 </div>
                 <div>
@@ -279,7 +293,7 @@ export default function QuotationForm({
                     placeholder="e.g. ABC Corporation"
                     value={formData.coverLetterCompany}
                     onChange={(e) => setFormData(prev => ({ ...prev, coverLetterCompany: e.target.value }))}
-                    className="mt-1 bg-white"
+                    className="mt-1"
                   />
                 </div>
                 <div>
@@ -288,7 +302,7 @@ export default function QuotationForm({
                     placeholder="e.g. 123 Main St, Manila"
                     value={formData.coverLetterAddress}
                     onChange={(e) => setFormData(prev => ({ ...prev, coverLetterAddress: e.target.value }))}
-                    className="mt-1 bg-white"
+                    className="mt-1"
                   />
                 </div>
               </div>
@@ -298,7 +312,7 @@ export default function QuotationForm({
                   value={formData.coverLetterBody}
                   onChange={(e) => setFormData(prev => ({ ...prev, coverLetterBody: e.target.value }))}
                   placeholder="Write the body of your cover letter..."
-                  className="mt-1 bg-white"
+                  className="mt-1"
                   rows={3}
                 />
               </div>
@@ -334,7 +348,7 @@ export default function QuotationForm({
                 <div className="w-9" />
               </div>
               {formData.items.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start p-4 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                <div key={index} className="flex gap-3 items-start p-4 neu-inset rounded-xl border border-white/60">
                   <div className="flex-1">
                     <Input
                       placeholder="Description"
@@ -403,7 +417,7 @@ export default function QuotationForm({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-between gap-3 pt-4 border-t border-slate-200/80">
+          <div className="flex justify-between gap-3 pt-4 border-t border-white/60">
             <Button variant="outline" onClick={onClose} className="rounded-xl">
               <X className="w-4 h-4 mr-2" /> Cancel
             </Button>

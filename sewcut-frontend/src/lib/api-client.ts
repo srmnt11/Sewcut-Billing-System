@@ -140,6 +140,7 @@ export const api = {
     Supplier: createCrudApi('/api/suppliers/'),
     Quotation: createCrudApi('/api/quotations/'),
     Billing: createCrudApi('/api/billings/'),
+    DeliveryReceipt: createCrudApi('/api/delivery-receipts/'),
     User: createCrudApi('/api/auth/users/'),
     Draft: createCrudApi('/api/drafts/'),
   },

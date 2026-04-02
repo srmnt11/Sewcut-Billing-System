@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { useNotificationContext } from '@/context/NotificationContext';
 import { format } from 'date-fns';
 import { 
-  UserCog, 
   UserPlus,
   Mail,
   Shield,
   ShieldCheck,
-  MoreHorizontal,
-  Search
+  Search,
+  Users as UsersIcon,
+  ArrowRight,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -25,7 +27,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import DataTable from '@/components/shared/DataTable';
-import PageHeader from '@/components/shared/PageHeader';
 
 export function Users() {
   const [showInvite, setShowInvite] = useState(false);
@@ -64,7 +65,7 @@ export function Users() {
     setIsInviting(true);
     try {
       const tempPassword = Math.random().toString(36).slice(2, 9) + 'A1!';
-      const result = await api.auth.register({
+      await api.auth.register({
         username: inviteEmail.split('@')[0],
         email: inviteEmail,
         password: tempPassword,
@@ -95,6 +96,9 @@ export function Users() {
     user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) : [];
+
+  const adminCount = Array.isArray(users) ? users.filter((u: any) => u.role === 'admin').length : 0;
+  const regularCount = Array.isArray(users) ? users.filter((u: any) => u.role !== 'admin').length : 0;
 
   const columns = [
     {
@@ -144,43 +148,96 @@ export function Users() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Users"
-        description="Manage admin accounts and permissions"
-        action={() => setShowInvite(true)}
-        actionLabel="Invite User"
-        actionIcon={UserPlus}
-      />
-
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <Input
-          placeholder="Search users..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      <div className="relative neu-hero overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/60 rounded-full blur-3xl animate-orb1" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-white/50 rounded-full blur-3xl animate-orb2" />
+          <div className="absolute top-1/2 left-1/5 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
+        </div>
+        <div className="relative z-10 hero-content px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <UsersIcon className="w-5 h-5 text-slate-500" />
+              <span className="text-slate-500 text-sm font-medium">Team Access</span>
+            </div>
+            <h1 className="text-3xl font-bold text-slate-800 mb-1">User Management</h1>
+            <p className="text-slate-500 text-base">Manage accounts, roles, and permissions in one place</p>
+            <div className="hero-stat-row flex items-center gap-6 mt-5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <UsersIcon className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{Array.isArray(users) ? users.length : 0}</p>
+                  <p className="text-slate-500 text-xs">Total Users</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <ShieldCheck className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{adminCount}</p>
+                  <p className="text-slate-500 text-xs">Admins</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-slate-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{regularCount}</p>
+                  <p className="text-slate-500 text-xs">Regular</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <Button
+            size="lg"
+            onClick={() => setShowInvite(true)}
+            className="text-slate-700"
+          >
+            <UserPlus className="w-4 h-4 mr-2" /> Invite User
+          </Button>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-slate-200">
-          <p className="text-sm text-slate-500">Total Users</p>
-          <p className="text-2xl font-bold text-slate-900">{Array.isArray(users) ? users.length : 0}</p>
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+        <div className="relative flex-1 max-w-xl">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Search users by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
-        <div className="bg-white rounded-xl p-4 border border-slate-200">
-          <p className="text-sm text-slate-500">Admins</p>
-          <p className="text-2xl font-bold text-amber-600">
-            {Array.isArray(users) ? users.filter(u => u.role === 'admin').length : 0}
-          </p>
+        <div className="text-xs text-slate-500 flex items-center gap-1.5">
+          <Activity className="w-3.5 h-3.5" />
+          {filteredUsers.length} of {Array.isArray(users) ? users.length : 0} users shown
         </div>
-        <div className="bg-white rounded-xl p-4 border border-slate-200">
-          <p className="text-sm text-slate-500">Regular Users</p>
-          <p className="text-2xl font-bold text-slate-600">
-            {Array.isArray(users) ? users.filter(u => u.role !== 'admin').length : 0}
-          </p>
-        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Users', count: Array.isArray(users) ? users.length : 0, color: 'text-slate-900', bg: 'bg-slate-50', icon: <UsersIcon className="w-4 h-4 text-slate-400" /> },
+          { label: 'Admins', count: adminCount, color: 'text-amber-600', bg: 'bg-amber-50', icon: <ShieldCheck className="w-4 h-4 text-amber-500" /> },
+          { label: 'Regular', count: regularCount, color: 'text-blue-600', bg: 'bg-blue-50', icon: <Shield className="w-4 h-4 text-blue-500" /> },
+          { label: 'Results', count: filteredUsers.length, color: 'text-violet-600', bg: 'bg-violet-50', icon: <ArrowRight className="w-4 h-4 text-violet-500" /> },
+        ].map((stat) => (
+          <Card key={stat.label} className="neu-surface-soft rounded-2xl">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg neu-press">{stat.icon}</div>
+                <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
+              </div>
+              <p className={`text-2xl font-bold ${stat.color}`}>{stat.count}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Table */}
@@ -243,7 +300,7 @@ export function Users() {
               <Button 
                 onClick={handleInvite}
                 disabled={isInviting}
-                className="bg-amber-500 hover:bg-amber-600"
+                className="text-slate-700"
               >
                 <Mail className="w-4 h-4 mr-2" />
                 {isInviting ? 'Sending...' : 'Send Invitation'}

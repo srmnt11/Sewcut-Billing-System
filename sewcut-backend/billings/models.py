@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from clients.models import Client
+from quotations.models import Quotation
 
 User = get_user_model()
 
@@ -38,6 +39,15 @@ class Billing(models.Model):
     notes = models.TextField(blank=True)
     terms = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+
+    # Optional source linkage (Quotation -> Invoice)
+    source_quotation = models.ForeignKey(
+        Quotation,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='generated_billings',
+    )
     
     # Metadata
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='billings')

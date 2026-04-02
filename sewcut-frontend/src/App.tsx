@@ -5,7 +5,6 @@ import { ActivityProvider } from './context/ActivityContext';
 import { BillingPreview } from './pages/BillingPreview';
 import { Drafts2 } from './pages/Drafts2';
 import { Login } from './pages/Login';
-// Register page removed - single admin user system
 import { Reports2 } from './pages/Reports2';
 import { Analytics } from './pages/Analytics';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,7 +19,9 @@ import { Suppliers } from './pages/Suppliers';
 import { Users } from './pages/Users';
 import { Settings } from './pages/Settings';
 import { History } from './pages/History';
-import { Toaster } from 'sonner';
+import { DeliveryReceipts } from './pages/DeliveryReceipts';
+import { ThemeProvider } from 'next-themes';
+import { Toaster } from '@/components/ui/sonner';
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ function getPageName(pathname: string) {
   if (pathname.startsWith('/reports')) return 'Reports';
   if (pathname.startsWith('/drafts')) return 'Drafts';
   if (pathname.startsWith('/history')) return 'History';
+  if (pathname.startsWith('/delivery-receipts')) return 'Delivery Receipts';
   if (pathname.startsWith('/users')) return 'Users';
   if (pathname.startsWith('/settings')) return 'Settings';
   if (pathname.startsWith('/preview')) return 'Billing';
@@ -80,12 +82,13 @@ function RootRedirect() {
 export function App() {
   return (
       <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <NotificationProvider>
-        <ActivityProvider>
-        <Toaster position="top-right" richColors closeButton />
-        <Router>
-          <Routes>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <AuthProvider>
+          <NotificationProvider>
+          <ActivityProvider>
+          <Toaster position="top-right" richColors closeButton />
+          <Router>
+            <Routes>
             {/* Root redirect */}
             <Route path="/" element={<RootRedirect />} />
             
@@ -110,6 +113,7 @@ export function App() {
                       <Route path="/reports" element={<ProtectedRoute><Reports2/></ProtectedRoute>} />
                       <Route path="/drafts" element={<ProtectedRoute><Drafts2/></ProtectedRoute>} />
                       <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+                      <Route path="/delivery-receipts" element={<ProtectedRoute><DeliveryReceipts /></ProtectedRoute>} />
                       <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
                       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                       <Route path="/preview/:id" element={<ProtectedRoute><BillingPreview /></ProtectedRoute>} />
@@ -119,10 +123,11 @@ export function App() {
               }
             />
           </Routes>
-        </Router>
-        </ActivityProvider>
-        </NotificationProvider>
-      </AuthProvider>
+          </Router>
+          </ActivityProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

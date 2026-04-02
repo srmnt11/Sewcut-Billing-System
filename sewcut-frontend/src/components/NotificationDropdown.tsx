@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Bell, X, CheckCheck, AlertCircle, DollarSign, FileText, Users, Clock } from 'lucide-react';
 import { Button } from './ui/button';
-import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -31,10 +30,10 @@ const iconMap = {
 };
 
 const typeColors = {
-  info: 'bg-blue-100 text-blue-600',
-  warning: 'bg-amber-100 text-amber-600',
-  success: 'bg-green-100 text-green-600',
-  error: 'bg-red-100 text-red-600',
+  info: 'text-blue-600',
+  warning: 'text-amber-600',
+  success: 'text-emerald-600',
+  error: 'text-rose-600',
 };
 
 export function NotificationDropdown({ 
@@ -75,16 +74,16 @@ export function NotificationDropdown({
       >
         <Bell className="w-5 h-5 text-slate-600" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 text-white text-xs font-semibold rounded-full flex items-center justify-center">
+          <span className="absolute -top-1 -right-1 w-5 h-5 neu-press text-amber-700 text-xs font-semibold rounded-full flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-96 neu-surface-soft rounded-2xl z-50 overflow-hidden">
           {/* Header */}
-          <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+          <div className="neu-inset px-4 py-3 flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-slate-900">Notifications</h3>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -96,7 +95,7 @@ export function NotificationDropdown({
                 variant="ghost"
                 size="sm"
                 onClick={onMarkAllAsRead}
-                className="text-xs text-amber-600 hover:text-amber-700"
+                className="text-xs text-amber-700 hover:text-amber-800"
               >
                 <CheckCheck className="w-3 h-3 mr-1" />
                 Mark all read
@@ -112,7 +111,7 @@ export function NotificationDropdown({
                 <p className="text-slate-500 text-sm">No notifications yet</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-100">
+              <div className="space-y-2 px-2 py-2">
                 {notifications.map((notification) => {
                   const Icon = notification.icon ? iconMap[notification.icon] : Bell;
                   
@@ -120,14 +119,14 @@ export function NotificationDropdown({
                     <div
                       key={notification.id}
                       className={cn(
-                        "px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors",
-                        !notification.read && "bg-blue-50/50"
+                        "px-4 py-3 rounded-xl cursor-pointer transition-colors",
+                        !notification.read ? "neu-inset" : "neu-surface-soft"
                       )}
                       onClick={() => onMarkAsRead(notification.id)}
                     >
                       <div className="flex gap-3">
                         <div className={cn(
-                          "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
+                          "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center neu-press",
                           typeColors[notification.type]
                         )}>
                           <Icon className="w-5 h-5" />
@@ -141,7 +140,7 @@ export function NotificationDropdown({
                               {notification.title}
                             </h4>
                             {!notification.read && (
-                              <span className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-1.5" />
+                              <span className="flex-shrink-0 w-2 h-2 bg-amber-500 rounded-full mt-1.5" />
                             )}
                           </div>
                           <p className="text-sm text-slate-600 mt-0.5 line-clamp-2">
@@ -162,12 +161,12 @@ export function NotificationDropdown({
 
           {/* Footer */}
           {notifications.length > 0 && (
-            <div className="bg-slate-50 px-4 py-3 border-t border-slate-200">
+            <div className="neu-inset px-4 py-3">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClearAll}
-                className="w-full text-slate-600 hover:text-red-600 hover:bg-red-50"
+                className="w-full text-slate-600 hover:text-rose-600"
               >
                 <X className="w-4 h-4 mr-2" />
                 Clear all notifications

@@ -9,18 +9,16 @@ import { Label } from '@/components/ui/label';
 import { 
   FileText, 
   Download, 
-  Calendar,
   DollarSign,
   Users,
   Truck,
-  BarChart3,
   FileSpreadsheet,
   Loader2,
   ChevronDown,
   Settings2,
   Sparkles
 } from 'lucide-react';
-import { format, subDays, subMonths } from 'date-fns';
+import { format, subMonths } from 'date-fns';
 import { toast } from 'sonner';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -245,7 +243,7 @@ export  function Reports2() {
   .footer { margin-top: 30px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px; }
 </style></head><body>
   <div class="header">
-    <div class="brand">Sew-Cut Wearing Apparel Manufacturing</div>
+    <div class="brand">Sewcut Wearing Apparel Manufacturing</div>
     <h1>${reportTitle}</h1>
     <div class="subtitle">Generated on ${format(new Date(), 'MMMM d, yyyy \'at\' h:mm a')} &bull; ${reportData.data.length} records</div>
   </div>
@@ -264,7 +262,7 @@ export  function Reports2() {
     <tbody>${buildRows()}</tbody>
   </table>
   <div class="footer">
-    <p>Sew-Cut Wearing Apparel Manufacturing &bull; Business Report</p>
+    <p>Sewcut Wearing Apparel Manufacturing &bull; Business Report</p>
   </div>
 </body></html>`;
 
@@ -354,21 +352,50 @@ export  function Reports2() {
   return (
     <div className="space-y-6">
       {/* ===== HERO HEADER ===== */}
-      <div className="relative rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+      <div className="relative neu-hero overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-orb1" />
-          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-orb2" />
-          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-rose-500/8 rounded-full blur-2xl animate-orb3" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/60 rounded-full blur-3xl animate-orb1" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-white/50 rounded-full blur-3xl animate-orb2" />
+          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
         <div className="relative z-10 px-8 py-8">
           <div className="flex items-center gap-2 mb-1">
-            <FileSpreadsheet className="w-5 h-5 text-amber-400" />
-            <span className="text-amber-400 text-sm font-medium">Reports</span>
+            <FileSpreadsheet className="w-5 h-5 text-slate-500" />
+            <span className="text-slate-500 text-sm font-medium">Reports</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-1">Business Reports</h1>
-          <p className="text-slate-400 text-base">Generate and export detailed reports for analysis</p>
+          <h1 className="text-3xl font-bold text-slate-800 mb-1">Business Reports</h1>
+          <div className="flex items-center gap-6 mt-5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 neu-press flex items-center justify-center">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-slate-800 text-sm font-semibold">{reportTypes.length}</p>
+                <p className="text-slate-500 text-xs">Report Types</p>
+              </div>
+            </div>
+            <div className="w-px h-8 bg-white/60" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 neu-press flex items-center justify-center">
+                <FileText className="w-4 h-4 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-slate-800 text-sm font-semibold">{invoices.length}</p>
+                <p className="text-slate-500 text-xs">Invoices</p>
+              </div>
+            </div>
+            <div className="w-px h-8 bg-white/60" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 neu-press flex items-center justify-center">
+                <Users className="w-4 h-4 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-slate-800 text-sm font-semibold">{clients.length}</p>
+                <p className="text-slate-500 text-xs">Clients</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -377,16 +404,15 @@ export  function Reports2() {
         {reportTypes.map((report) => (
           <div 
             key={report.id}
-            className={`cursor-pointer rounded-2xl p-5 border-2 transition-all duration-300 group relative overflow-hidden ${
+            className={`cursor-pointer rounded-2xl p-5 transition-all duration-300 group relative overflow-hidden ${
               selectedReport === report.id 
-                ? 'border-amber-500 bg-amber-50/50 shadow-lg shadow-amber-500/10' 
-                : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                ? 'neu-press'
+                : 'neu-surface-soft'
             }`}
             onClick={() => setSelectedReport(report.id)}
           >
-            <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-slate-100/50 group-hover:scale-125 transition-transform duration-500" />
             <div className="relative z-10">
-              <div className={`w-11 h-11 rounded-xl ${report.color} flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+              <div className="w-11 h-11 rounded-xl neu-press flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                 <report.icon className="w-5 h-5" />
               </div>
               <h3 className="font-semibold text-slate-900">{report.name}</h3>
@@ -402,10 +428,10 @@ export  function Reports2() {
         <button
           onClick={() => setConfigOpen(!configOpen)}
           className={cn(
-            "w-full group relative overflow-hidden rounded-2xl border transition-all duration-500 ease-out",
+            "w-full group relative overflow-hidden rounded-2xl transition-all duration-500 ease-out",
             configOpen
-              ? "border-amber-300/80 bg-gradient-to-r from-amber-50 via-white to-amber-50 shadow-lg shadow-amber-500/10"
-              : "border-slate-200/80 bg-gradient-to-r from-white to-slate-50/50 shadow-sm hover:shadow-md hover:border-amber-200/60"
+              ? "neu-press"
+              : "neu-surface-soft"
           )}
         >
           {/* Animated background glow */}
@@ -419,19 +445,19 @@ export  function Reports2() {
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-500",
                 configOpen
-                  ? "bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/30 scale-110"
-                  : "bg-gradient-to-br from-amber-100 to-amber-200 group-hover:from-amber-200 group-hover:to-amber-300 group-hover:scale-105"
+                  ? "neu-press scale-110"
+                  : "neu-press group-hover:scale-105"
               )}>
                 <Settings2 className={cn(
                   "w-5 h-5 transition-all duration-500",
-                  configOpen ? "text-white rotate-90" : "text-amber-600 group-hover:text-amber-700"
+                  configOpen ? "text-slate-700 rotate-90" : "text-slate-600"
                 )} />
               </div>
               <div className="text-left">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-slate-900 text-[15px]">Configure Report</span>
                   {selectedReportInfo && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[11px] font-medium">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full neu-chip text-[11px] font-medium text-amber-700">
                       <Sparkles className="w-3 h-3" />
                       {selectedReportInfo.name}
                     </span>
@@ -445,12 +471,12 @@ export  function Reports2() {
             <div className={cn(
               "w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-500",
               configOpen
-                ? "bg-amber-100 rotate-180"
-                : "bg-slate-100 group-hover:bg-amber-50"
+                ? "neu-press rotate-180"
+                : "neu-press"
             )}>
               <ChevronDown className={cn(
                 "w-4 h-4 transition-colors duration-300",
-                configOpen ? "text-amber-600" : "text-slate-400 group-hover:text-amber-500"
+                configOpen ? "text-slate-600" : "text-slate-500"
               )} />
             </div>
           </div>
@@ -466,12 +492,12 @@ export  function Reports2() {
           }}
         >
           <div ref={configContentRef} className="pt-3">
-            <div className="rounded-2xl border border-slate-200/80 bg-white shadow-lg shadow-slate-200/50 p-6">
+            <div className="rounded-2xl neu-surface-soft p-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <Label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Report Type</Label>
                   <Select value={selectedReport} onValueChange={setSelectedReport}>
-                    <SelectTrigger className="mt-1.5 rounded-xl h-11 border-slate-200 hover:border-amber-300 transition-colors">
+                    <SelectTrigger className="mt-1.5 rounded-xl h-11">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -489,7 +515,7 @@ export  function Reports2() {
                         type="date"
                         value={dateFrom}
                         onChange={(e) => setDateFrom(e.target.value)}
-                        className="mt-1.5 rounded-xl h-11 border-slate-200 hover:border-amber-300 transition-colors"
+                        className="mt-1.5 rounded-xl h-11"
                       />
                     </div>
                     <div>
@@ -498,7 +524,7 @@ export  function Reports2() {
                         type="date"
                         value={dateTo}
                         onChange={(e) => setDateTo(e.target.value)}
-                        className="mt-1.5 rounded-xl h-11 border-slate-200 hover:border-amber-300 transition-colors"
+                        className="mt-1.5 rounded-xl h-11"
                       />
                     </div>
                   </>
@@ -507,7 +533,7 @@ export  function Reports2() {
                   <Button 
                     onClick={generateReport}
                     disabled={isGenerating}
-                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 w-full rounded-xl h-11 shadow-sm shadow-amber-500/20 transition-all duration-300 hover:shadow-md hover:shadow-amber-500/30"
+                    className="w-full rounded-xl h-11"
                   >
                     {isGenerating ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -525,7 +551,7 @@ export  function Reports2() {
 
       {/* Report Results */}
       {reportData && (
-        <Card className="border-0 shadow-sm rounded-2xl">
+        <Card className="neu-surface-soft rounded-2xl">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>{selectedReportInfo?.name}</CardTitle>
@@ -546,12 +572,12 @@ export  function Reports2() {
           </CardHeader>
           <CardContent>
             {reportData.type === 'sales' && (
-              <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl p-6 text-white mb-6">
-                <p className="text-amber-100">Total Sales Revenue</p>
-                <p className="text-3xl font-bold mt-1">
+              <div className="neu-inset rounded-xl p-6 mb-6">
+                <p className="text-slate-500">Total Sales Revenue</p>
+                <p className="text-3xl font-bold mt-1 text-slate-800">
                   ₱{reportData.data.reduce((sum, inv) => sum + (parseFloat(inv.grandTotal) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-amber-100 text-sm mt-2">
+                <p className="text-slate-500 text-sm mt-2">
                   From {reportData.data.length} paid invoices
                 </p>
               </div>

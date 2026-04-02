@@ -94,10 +94,10 @@ export function BillingTable({ billings }: BillingTableProps) {
         </div>
       </div>
 
-      <div className="rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="neu-surface-soft rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200">
+            <thead className="neu-inset text-slate-600 font-medium">
               <tr>
                 <th className="px-6 py-3">Billing Number</th>
                 <th className="px-6 py-3">Company Name</th>
@@ -107,18 +107,18 @@ export function BillingTable({ billings }: BillingTableProps) {
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredData.length > 0 ? filteredData.map(record => <tr key={record.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">
+            <tbody className="divide-y divide-white/60">
+              {filteredData.length > 0 ? filteredData.map(record => <tr key={record.id} className="hover:bg-white/40 transition-colors">
+                    <td className="px-6 py-4 font-medium text-slate-900">
                       {record.billingNumber}
                     </td>
-                    <td className="px-6 py-4 text-gray-600">
+                    <td className="px-6 py-4 text-slate-600">
                       {record.companyName}
                     </td>
-                    <td className="px-6 py-4 text-gray-600">
+                    <td className="px-6 py-4 text-slate-600">
                       {formatDate(record.date)}
                     </td>
-                    <td className="px-6 py-4 text-gray-900 font-medium">
+                    <td className="px-6 py-4 text-slate-900 font-medium">
                       {formatCurrency(record.amount)}
                     </td>
                     <td className="px-6 py-4">

@@ -21,7 +21,7 @@ interface BulkActionsProps {
   onImport: (file: File) => void;
   onBulkDelete?: () => void;
   onBulkStatusChange?: (status: string) => void;
-  entityType: 'clients' | 'invoices' | 'quotations' | 'suppliers';
+  entityType: 'clients' | 'invoices' | 'quotations' | 'suppliers' | 'delivery receipts';
   availableStatuses?: string[];
 }
 
@@ -73,10 +73,10 @@ export default function BulkActions({
   };
 
   return (
-    <Card className="border border-slate-200/80 shadow-sm rounded-2xl bg-gradient-to-b from-white to-slate-50/50 overflow-hidden">
+    <Card className="neu-surface-soft rounded-2xl overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg neu-press flex items-center justify-center">
             <Download className="w-4 h-4 text-amber-600" />
           </div>
           <div>
@@ -94,7 +94,7 @@ export default function BulkActions({
             size="sm"
             onClick={() => handleExport('csv')}
             disabled={isExporting}
-            className="flex-1 rounded-xl hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors"
+            className="flex-1 rounded-xl"
           >
             {isExporting ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -108,7 +108,7 @@ export default function BulkActions({
             size="sm"
             onClick={() => handleExport('pdf')}
             disabled={isExporting}
-            className="flex-1 rounded-xl hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-colors"
+            className="flex-1 rounded-xl"
           >
             <FileText className="w-4 h-4 mr-2" />
             Export PDF
@@ -120,7 +120,7 @@ export default function BulkActions({
           size="sm"
           onClick={handleImportClick}
           disabled={isImporting}
-          className="w-full rounded-xl hover:bg-violet-50 hover:text-violet-700 hover:border-violet-200 transition-colors"
+          className="w-full rounded-xl"
         >
           {isImporting ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -140,7 +140,7 @@ export default function BulkActions({
         {selectedCount > 0 && (
           <>
             {onBulkStatusChange && availableStatuses && availableStatuses.length > 0 && (
-              <div className="pt-3 border-t border-slate-200/80">
+              <div className="pt-3 border-t border-white/60">
                 <Label className="text-xs text-slate-500 mb-2 block font-medium">Change Status</Label>
                 <div className="flex flex-wrap gap-2">
                   {availableStatuses.map((status) => (

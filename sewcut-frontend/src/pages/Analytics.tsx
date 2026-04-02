@@ -48,6 +48,9 @@ function useAnimatedValue(target: number, duration = 800) {
 
 export function Analytics() {
   const [chartTab, setChartTab] = useState<'revenue' | 'pending'>('revenue');
+  const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const chartGridColor = isDarkMode ? 'rgba(148, 163, 184, 0.22)' : '#f1f5f9';
+  const chartAxisColor = isDarkMode ? '#cbd5e1' : '#94a3b8';
 
   const { data: invoices = [], isLoading: loadingInvoices } = useQuery<any[]>({
     queryKey: ['billings'],
@@ -111,7 +114,7 @@ export function Analytics() {
     };
 
     return Object.entries(statusCount)
-      .filter(([_, value]) => value > 0)
+      .filter(([, value]) => value > 0)
       .map(([name, value]) => ({ name, value }));
   };
 
@@ -155,10 +158,6 @@ export function Analytics() {
     return sum;
   }, 0);
 
-  const pendingRevenue = invoices
-    .filter(inv => inv.status === 'Sent' || inv.status === 'Pending')
-    .reduce((sum, inv) => sum + (parseFloat(inv.grandTotal) || 0), 0);
-
   // Compare current month vs last month
   const now = new Date();
   const thisMonthStart = startOfMonth(now);
@@ -196,12 +195,24 @@ export function Analytics() {
   const ChartTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xl text-xs">
-        <p className="font-semibold text-slate-700 mb-1">{label}</p>
+      <div className="rounded-xl neu-surface-soft px-4 py-3 text-xs border border-white/40 dark:border-slate-500/30">
+        <p className="font-semibold text-slate-700 dark:text-slate-100 mb-1">{label}</p>
         {payload.map((p: any, i: number) => (
           <p key={i} style={{ color: p.color }} className="font-medium">
             {p.name}: ₱{(p.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </p>
+        ))}
+      </div>
+    );
+  };
+
+  const CountTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div className="rounded-xl neu-surface-soft px-4 py-3 text-xs border border-white/40 dark:border-slate-500/30">
+        <p className="font-semibold text-slate-700 dark:text-slate-100 mb-1">{label}</p>
+        {payload.map((p: any, i: number) => (
+          <p key={i} style={{ color: p.color }} className="font-medium">{p.name}: {p.value}</p>
         ))}
       </div>
     );
@@ -228,131 +239,154 @@ export function Analytics() {
     <div className="space-y-6">
 
       {/* ===== HERO HEADER ===== */}
-      <div className="relative rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+      <div className="relative neu-hero overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-orb1" />
-          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-orb2" />
-          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-indigo-500/8 rounded-full blur-2xl animate-orb3" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/60 rounded-full blur-3xl animate-orb1" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-white/50 rounded-full blur-3xl animate-orb2" />
+          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
         <div className="relative z-10 px-8 py-8">
           <div className="flex items-center gap-2 mb-1">
-            <BarChart3 className="w-5 h-5 text-amber-400" />
-            <span className="text-amber-400 text-sm font-medium">Analytics & Insights</span>
+            <BarChart3 className="w-5 h-5 text-slate-500" />
+            <span className="text-slate-500 text-sm font-medium">Analytics & Insights</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-1">Business Analytics</h1>
-          <p className="text-slate-400 text-base">
-            {invoices.length} invoices tracked across {clients.length} clients with ₱{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })} in revenue
-          </p>
+          <h1 className="text-3xl font-bold text-slate-800 mb-1">Business Analytics</h1>
+          <div className="flex items-center gap-6 mt-5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 neu-press flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-slate-800 text-sm font-semibold">₱{animatedRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                <p className="text-slate-500 text-xs">Total Revenue</p>
+              </div>
+            </div>
+            <div className="w-px h-8 bg-white/60" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 neu-press flex items-center justify-center">
+                <FileText className="w-4 h-4 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-slate-800 text-sm font-semibold">{animatedInvoices}</p>
+                <p className="text-slate-500 text-xs">Invoices</p>
+              </div>
+            </div>
+            <div className="w-px h-8 bg-white/60" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 neu-press flex items-center justify-center">
+                <Users className="w-4 h-4 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-slate-800 text-sm font-semibold">{animatedClients}</p>
+                <p className="text-slate-500 text-xs">Active Clients</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* ===== STATS CARDS ===== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Total Revenue */}
-        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-gradient-to-br from-amber-500 to-orange-500">
+        <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-amber-100 text-sm font-medium">Total Revenue</p>
-                <p className="text-3xl font-bold text-white mt-1 tracking-tight">
+                <p className="text-slate-500 text-sm font-medium">Total Revenue</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">
                   ₱{animatedRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
                 <div className="flex items-center gap-1.5 mt-2">
                   {growthPercent !== null ? (
                     <>
-                      <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${parseFloat(growthPercent) >= 0 ? 'bg-white/20 text-white' : 'bg-red-100/20 text-red-100'}`}>
+                      <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${parseFloat(growthPercent) >= 0 ? 'neu-chip text-emerald-600' : 'neu-chip text-rose-500'}`}>
                         {parseFloat(growthPercent) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                         {Math.abs(parseFloat(growthPercent)) > 999 ? '>999' : Math.abs(parseFloat(growthPercent))}%
                       </span>
-                      <span className="text-amber-100 text-xs">vs last month</span>
+                      <span className="text-slate-500 text-xs">vs last month</span>
                     </>
                   ) : (
-                    <span className="text-amber-100 text-xs">No data for last month</span>
+                    <span className="text-slate-500 text-xs">No data for last month</span>
                   )}
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-white/20 group-hover:bg-white/30 transition-colors">
-                <DollarSign className="w-6 h-6 text-white" />
+              <div className="p-3 neu-press transition-colors">
+                <DollarSign className="w-6 h-6 text-slate-700" />
               </div>
             </div>
           </CardContent>
-          <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
         </Card>
 
         {/* Total Invoices */}
-        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white">
+        <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-slate-500 text-sm font-medium">Total Invoices</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">{animatedInvoices}</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">{animatedInvoices}</p>
                 <p className="text-slate-500 text-xs mt-2">{invoices.filter((i: any) => i.status === 'Paid' || i.status === 'Delivered').length} completed</p>
               </div>
-              <div className="p-3 rounded-xl bg-blue-50 group-hover:bg-blue-100 transition-colors">
+              <div className="p-3 neu-press transition-colors">
                 <FileText className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
-          <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-slate-100/60" />
         </Card>
 
         {/* Active Clients */}
-        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white">
+        <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-slate-500 text-sm font-medium">Active Clients</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">{animatedClients}</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">{animatedClients}</p>
                 <p className="text-slate-500 text-xs mt-2">{clients.length} total registered</p>
               </div>
-              <div className="p-3 rounded-xl bg-emerald-50 group-hover:bg-emerald-100 transition-colors">
+              <div className="p-3 neu-press transition-colors">
                 <Users className="w-6 h-6 text-emerald-600" />
               </div>
             </div>
           </CardContent>
-          <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-slate-100/60" />
         </Card>
 
         {/* Conversion Rate */}
-        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-slate-900">
+        <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-slate-400 text-sm font-medium">Conversion Rate</p>
-                <p className="text-3xl font-bold text-white mt-1 tracking-tight">{quotationStats.rate}%</p>
+                <p className="text-slate-500 text-sm font-medium">Conversion Rate</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">{quotationStats.rate}%</p>
                 <p className="text-slate-500 text-xs mt-2">{quotationStats.approved}/{quotationStats.total} quotes accepted</p>
               </div>
-              <div className="p-3 rounded-xl bg-white/10 group-hover:bg-white/20 transition-colors">
-                <Target className="w-6 h-6 text-white" />
+              <div className="p-3 neu-press transition-colors">
+                <Target className="w-6 h-6 text-slate-700" />
               </div>
             </div>
           </CardContent>
-          <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-white/5" />
         </Card>
       </div>
 
       {/* ===== CHARTS ROW 1 ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Trend (wider) */}
-        <Card className="border-0 shadow-sm lg:col-span-2">
+        <Card className="neu-surface-soft lg:col-span-2">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-amber-500" />
                 Revenue & Pending
               </CardTitle>
-              <div className="flex rounded-lg bg-slate-100 p-0.5">
+              <div className="flex rounded-lg neu-inset p-0.5">
                 <button
                   onClick={() => setChartTab('revenue')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartTab === 'revenue' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartTab === 'revenue' ? 'neu-press text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   Revenue
                 </button>
                 <button
                   onClick={() => setChartTab('pending')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartTab === 'pending' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartTab === 'pending' ? 'neu-press text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   Volume
                 </button>
@@ -363,7 +397,7 @@ export function Analytics() {
             <div className="h-72 mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 {chartTab === 'revenue' ? (
-                  <AreaChart data={monthlyData}>
+                  <AreaChart data={monthlyData} style={{ backgroundColor: 'transparent' }}>
                     <defs>
                       <linearGradient id="colorAnalyticsRevenue" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
@@ -374,19 +408,19 @@ export function Analytics() {
                         <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+                    <XAxis dataKey="name" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
                     <Tooltip content={<ChartTooltip />} />
                     <Area type="monotone" dataKey="pending" stroke="#3b82f6" strokeWidth={2} fill="url(#colorAnalyticsPending)" name="Pending" />
                     <Area type="monotone" dataKey="revenue" stroke="#f59e0b" strokeWidth={2.5} fill="url(#colorAnalyticsRevenue)" name="Revenue" />
                   </AreaChart>
                 ) : (
-                  <BarChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
-                    <Tooltip formatter={(value: any) => [value, 'Invoices']} contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0' }} />
+                  <BarChart data={monthlyData} style={{ backgroundColor: 'transparent' }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+                    <XAxis dataKey="name" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip content={<CountTooltip />} />
                     <Bar dataKey="count" fill="#f59e0b" radius={[6, 6, 0, 0]} name="Invoices" barSize={36} />
                   </BarChart>
                 )}
@@ -396,7 +430,7 @@ export function Analytics() {
         </Card>
 
         {/* Invoice Status Donut */}
-        <Card className="border-0 shadow-sm">
+        <Card className="neu-surface-soft">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <PieChartIcon className="w-4 h-4 text-amber-500" />
@@ -410,7 +444,7 @@ export function Analytics() {
               <>
                 <div className="h-48 mt-2">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                    <PieChart style={{ backgroundColor: 'transparent' }}>
                       <Pie
                         data={statusData}
                         cx="50%" cy="50%"
@@ -423,7 +457,20 @@ export function Analytics() {
                           <Cell key={`cell-${entry.name}`} fill={STATUS_COLORS[entry.name] || '#94a3b8'} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: any, name: any) => [`${value} invoices`, name]} />
+                      <Tooltip
+                        formatter={(value: any, name: any) => [`${value} invoices`, name]}
+                        contentStyle={{
+                          borderRadius: '12px',
+                          background: isDarkMode ? 'rgba(15, 23, 42, 0.96)' : '#e6e9ef',
+                          border: isDarkMode ? '1px solid rgba(148, 163, 184, 0.35)' : '0',
+                          boxShadow: isDarkMode
+                            ? '0 10px 24px rgba(2, 6, 23, 0.6)'
+                            : '8px 8px 18px rgba(163,177,198,0.35), -8px -8px 18px rgba(255,255,255,0.7)',
+                          color: isDarkMode ? '#e2e8f0' : '#334155',
+                        }}
+                        labelStyle={{ color: isDarkMode ? '#f8fafc' : '#334155', fontWeight: 700 }}
+                        itemStyle={{ color: isDarkMode ? '#cbd5e1' : '#334155' }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -445,7 +492,7 @@ export function Analytics() {
       {/* ===== CHARTS ROW 2 ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Clients */}
-        <Card className="border-0 shadow-sm">
+        <Card className="neu-surface-soft">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Users className="w-4 h-4 text-amber-500" />
@@ -456,10 +503,10 @@ export function Analytics() {
             <div className="h-72 min-h-72">
               {topClients.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topClients} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis type="number" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v/1000}k`} />
-                    <YAxis type="category" dataKey="name" stroke="#94a3b8" fontSize={12} width={100} tickLine={false} axisLine={false} />
+                  <BarChart data={topClients} layout="vertical" style={{ backgroundColor: 'transparent' }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+                    <XAxis type="number" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v/1000}k`} />
+                    <YAxis type="category" dataKey="name" stroke={chartAxisColor} fontSize={12} width={100} tickLine={false} axisLine={false} />
                     <Tooltip content={<ChartTooltip />} />
                     <Bar dataKey="value" fill="#f59e0b" radius={[0, 6, 6, 0]} name="Revenue" barSize={24} />
                   </BarChart>
@@ -474,7 +521,7 @@ export function Analytics() {
         </Card>
 
         {/* Quotation Conversion Funnel */}
-        <Card className="border-0 shadow-sm">
+        <Card className="neu-surface-soft">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Target className="w-4 h-4 text-amber-500" />
@@ -484,10 +531,10 @@ export function Analytics() {
           <CardContent>
             <div className="space-y-4 mt-4">
               {[
-                { label: 'Total Quotes', value: quotationStats.total, color: 'bg-slate-100 text-slate-700', barColor: 'bg-slate-400', pct: 100 },
-                { label: 'Sent', value: quotations.filter(q => q.status === 'Sent').length, color: 'bg-blue-100 text-blue-700', barColor: 'bg-blue-500', pct: quotationStats.total > 0 ? (quotations.filter(q => q.status === 'Sent').length / quotationStats.total) * 100 : 0 },
-                { label: 'Accepted', value: quotationStats.approved, color: 'bg-emerald-100 text-emerald-700', barColor: 'bg-emerald-500', pct: quotationStats.total > 0 ? (quotationStats.approved / quotationStats.total) * 100 : 0 },
-                { label: 'Rejected', value: quotationStats.rejected, color: 'bg-red-100 text-red-700', barColor: 'bg-red-500', pct: quotationStats.total > 0 ? (quotationStats.rejected / quotationStats.total) * 100 : 0 },
+                { label: 'Total Quotes', value: quotationStats.total, color: 'neu-chip text-slate-700', barColor: 'bg-slate-400', pct: 100 },
+                { label: 'Sent', value: quotations.filter(q => q.status === 'Sent').length, color: 'neu-chip text-blue-700', barColor: 'bg-blue-500', pct: quotationStats.total > 0 ? (quotations.filter(q => q.status === 'Sent').length / quotationStats.total) * 100 : 0 },
+                { label: 'Accepted', value: quotationStats.approved, color: 'neu-chip text-emerald-700', barColor: 'bg-emerald-500', pct: quotationStats.total > 0 ? (quotationStats.approved / quotationStats.total) * 100 : 0 },
+                { label: 'Rejected', value: quotationStats.rejected, color: 'neu-chip text-rose-700', barColor: 'bg-rose-500', pct: quotationStats.total > 0 ? (quotationStats.rejected / quotationStats.total) * 100 : 0 },
               ].map((stage, idx) => (
                 <div key={stage.label} className="group">
                   <div className="flex items-center justify-between mb-1.5">
@@ -497,13 +544,13 @@ export function Analytics() {
                     </div>
                     <span className="text-sm font-bold text-slate-900">{stage.value}</span>
                   </div>
-                  <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-2.5 neu-inset rounded-full overflow-hidden">
                     <div className={`h-full ${stage.barColor} rounded-full transition-all duration-700`} style={{ width: `${stage.pct}%` }} />
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-6 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100/50 border border-emerald-200/50">
+            <div className="mt-6 p-4 rounded-xl neu-inset">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-emerald-700">Conversion Rate</span>
                 <span className="text-2xl font-bold text-emerald-700">{quotationStats.rate}%</span>

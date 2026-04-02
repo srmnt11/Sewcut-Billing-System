@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { useNotificationContext, NotificationHelpers } from '@/context/NotificationContext';
 import { useActivity } from '@/context/ActivityContext';
 import { 
   Users, 
-  Eye, 
   Pencil,
   Trash2,
   MoreHorizontal,
@@ -13,7 +12,9 @@ import {
   Mail,
   Phone,
   MapPin,
-  Clock
+  Clock,
+  DollarSign,
+  CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -197,6 +198,11 @@ export function Clients() {
     setSelectedClients([]);
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setAdvancedFilters({});
+  };
+
   const getClientRevenue = (clientId: any) => {
     const client = clients.find((c: any) => c._id === clientId || c.id === clientId);
     if (!client) return 0;
@@ -229,33 +235,61 @@ export function Clients() {
   });
 
   const totalClientRevenue = clients.reduce((sum: number, c: any) => sum + getClientRevenue(c._id || c.id), 0);
+  const activeClientCount = clients.filter((c: any) => c.status === 'active').length;
 
   return (
     <div className="space-y-6">
       {/* ===== HERO HEADER ===== */}
-      <div className="relative rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+      <div className="relative neu-hero overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-orb1" />
-          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl animate-orb2" />
-          <div className="absolute top-1/2 left-1/5 w-64 h-64 bg-cyan-500/8 rounded-full blur-2xl animate-orb3" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/60 rounded-full blur-3xl animate-orb1" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-white/50 rounded-full blur-3xl animate-orb2" />
+          <div className="absolute top-1/2 left-1/5 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
-        <div className="relative z-10 px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative z-10 hero-content px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Users className="w-5 h-5 text-amber-400" />
-              <span className="text-amber-400 text-sm font-medium">Clients</span>
+              <Users className="w-5 h-5 text-slate-500" />
+              <span className="text-slate-500 text-sm font-medium">Clients</span>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-1">Client Management</h1>
-            <p className="text-slate-400 text-base">
-              {clients.length} clients &middot; ₱{totalClientRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })} total revenue
-            </p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-1">Client Management</h1>
+            <div className="hero-stat-row flex items-center gap-6 mt-5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <Users className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{clients.length}</p>
+                  <p className="text-slate-500 text-xs">Total Clients</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{activeClientCount}</p>
+                  <p className="text-slate-500 text-xs">Active</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">₱{totalClientRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-slate-500 text-xs">Revenue</p>
+                </div>
+              </div>
+            </div>
           </div>
           <Button
             size="lg"
             onClick={() => { setEditingClient(null); setShowForm(true); }}
-            className="bg-amber-500 hover:bg-amber-400 text-white font-semibold shadow-lg shadow-amber-500/20 transition-all hover:shadow-amber-500/30 hover:scale-[1.02]"
+            className="text-slate-700"
           >
             <Users className="w-4 h-4 mr-2" />
             Add Client
@@ -264,14 +298,29 @@ export function Clients() {
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <Input
-          placeholder="Search clients..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Search clients..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClearFilters}
+            disabled={!searchTerm.trim() && Object.keys(advancedFilters).length === 0}
+            className="rounded-xl text-xs h-9"
+          >
+            Clear Filters
+          </Button>
+        </div>
       </div>
 
       {/* Bulk Actions */}
@@ -279,7 +328,7 @@ export function Clients() {
         <BulkActions
           selectedCount={selectedClients.length}
           onExport={handleBulkExport}
-          onImport={(file) => toast.info('Import feature coming soon')}
+          onImport={() => toast.info('Import feature coming soon')}
           onBulkDelete={handleBulkDelete}
           onBulkStatusChange={(status) => {
             selectedClients.forEach(id => {
@@ -309,11 +358,10 @@ export function Clients() {
           { label: 'Active', value: clients.filter((c: any) => c.status === 'active').length, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: <Users className="w-4 h-4 text-emerald-500" /> },
           { label: 'Inactive', value: clients.filter((c: any) => c.status === 'inactive').length, color: 'text-slate-400', bg: 'bg-slate-50', icon: <Users className="w-4 h-4 text-slate-300" /> },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white rounded-2xl p-5 border border-slate-200 hover:shadow-md transition-all duration-300 group relative overflow-hidden">
-            <div className="absolute -bottom-6 -right-6 w-24 h-24 rounded-full bg-slate-100/50 group-hover:scale-125 transition-transform duration-500" />
+          <div key={stat.label} className="neu-surface-soft p-5 transition-all duration-300 group relative overflow-hidden">
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded-lg ${stat.bg} group-hover:scale-110 transition-transform`}>{stat.icon}</div>
+                <div className="p-1.5 rounded-lg neu-press group-hover:scale-110 transition-transform">{stat.icon}</div>
                 <p className="text-sm text-slate-500 font-medium">{stat.label}</p>
               </div>
               <p className={`text-2xl font-bold ${stat.color}`}>{stat.value}</p>
@@ -340,11 +388,11 @@ export function Clients() {
           {filteredClients.map((client: any) => {
             const clientId = client._id || client.id;
             return (
-            <Card key={clientId} className="border-0 shadow-sm hover:shadow-lg transition-all duration-300 group rounded-2xl hover:-translate-y-1">
+            <Card key={clientId} className="neu-surface-soft transition-all duration-300 group rounded-2xl hover:-translate-y-1">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                    <div className="w-12 h-12 neu-press flex items-center justify-center text-slate-700 font-bold text-lg">
                       {client.name?.charAt(0).toUpperCase()}
                     </div>
                     <div>

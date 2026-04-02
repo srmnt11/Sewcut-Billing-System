@@ -1,10 +1,11 @@
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action, api_view, permission_classes as drf_permission_classes
 from rest_framework.response import Response
 from django.db.models import Sum, Count, Q
 from datetime import datetime, timedelta
 from .models import Billing
 from .serializers import BillingSerializer
+from quotations.models import Quotation
 import re
 
 
@@ -97,3 +98,58 @@ class BillingViewSet(viewsets.ModelViewSet):
             else:
                 next_num = Billing.objects.count() + 1
         return Response({'number': f'INV-{next_num:04d}'})
+
+    @action(detail=False, methods=['get'])
+    def autofill_sources(self, request):
+        """List accepted quotations available for invoice autofill."""
+        quotations = Quotation.objects.filter(status='Accepted').order_by('-created_at')
+        data = [
+            {
+                'id': q.id,
+                'quotationNumber': q.quotation_number,
+                'companyName': q.company_name,
+                'quotationDate': q.quotation_date,
+                'grandTotal': q.grand_total,
+            }
+            for q in quotations
+        ]
+        return Response(data)
+
+    @action(detail=False, methods=['get'])
+    def autofill_from_quotation(self, request):
+        """Return invoice-ready payload mapped from an existing quotation."""
+        quotation_id = request.query_params.get('quotation_id')
+        if not quotation_id:
+            return Response({'detail': 'quotation_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            quotation = Quotation.objects.get(pk=quotation_id)
+        except Quotation.DoesNotExist:
+            return Response({'detail': 'Quotation not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        items = [
+            {
+                'description': item.description,
+                'quantity': float(item.quantity),
+                'unitPrice': float(item.unit_price),
+                'total': float(item.total),
+            }
+            for item in quotation.items.all()
+        ]
+
+        payload = {
+            'sourceQuotationId': quotation.id,
+            'client': quotation.client_id,
+            'companyName': quotation.company_name,
+            'billingDate': datetime.now().date().isoformat(),
+            'subtotal': float(quotation.subtotal),
+            'taxRate': float(quotation.tax_rate),
+            'taxAmount': float(quotation.tax_amount),
+            'discount': float(quotation.discount),
+            'grandTotal': float(quotation.grand_total),
+            'notes': quotation.notes or '',
+            'terms': quotation.terms or '',
+            'status': 'Pending',
+            'items': items,
+        }
+        return Response(payload)

@@ -28,7 +28,7 @@ export default function PageHeader({
       {action && (
         <Button 
           onClick={action}
-          className="bg-amber-500 hover:bg-amber-600 text-white shadow-sm"
+          className="text-slate-800"
         >
           <ActionIcon className="w-4 h-4 mr-2" />
           {actionLabel}

@@ -57,8 +57,8 @@ def send_quotation_email(request, pk):
         # Send email
         email.send(fail_silently=False)
         
-        # Update quotation status to 'Sent' if currently 'Draft'
-        if quotation.status == 'Draft':
+        # Update quotation workflow status after successful send.
+        if quotation.status in ['Draft', 'Pending']:
             quotation.status = 'Sent'
             quotation.save()
         

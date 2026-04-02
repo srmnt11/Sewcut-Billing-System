@@ -151,7 +151,7 @@ export function BillingPreview() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[var(--neu-bg)]">
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
         </div>
@@ -161,7 +161,7 @@ export function BillingPreview() {
 
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[var(--neu-bg)]">
         <div className="container mx-auto px-4 py-20">
           <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center max-w-md mx-auto shadow-lg">
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
@@ -177,12 +177,12 @@ export function BillingPreview() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 print:bg-white">
+    <div className="min-h-screen bg-[var(--neu-bg)] print:bg-white">
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 print:p-0 print:max-w-none">
         <div className="w-full max-w-5xl mx-auto space-y-6 print:max-w-none print:space-y-0">
           {/* Success Banner - Hidden in print */}
           {stateData && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3 text-emerald-800 print:hidden shadow-sm">
+            <div className="neu-surface-soft rounded-xl p-4 flex items-center gap-3 text-emerald-700 print:hidden">
               <CheckCircle className="h-5 w-5 text-emerald-600" />
               <span className="font-medium">
                 Invoice successfully created and ready to send!
@@ -202,7 +202,7 @@ export function BillingPreview() {
               {data.companyEmail && (
                 <Button 
                   onClick={handleSendEmail}
-                  className="bg-blue-600 hover:bg-blue-700 gap-2"
+                  className="gap-2 text-slate-700"
                 >
                   <Mail className="h-4 w-4" />
                   Send Email
@@ -218,7 +218,7 @@ export function BillingPreview() {
               </Button>
               <Button 
                 onClick={handleDownloadPDF}
-                className="bg-orange-500 hover:bg-orange-600 gap-2"
+                className="gap-2 text-slate-700"
               >
                 <Download className="h-4 w-4" />
                 Download PDF
@@ -227,10 +227,10 @@ export function BillingPreview() {
           </div>
 
           {/* Invoice Card - PDF-ready layout */}
-          <Card className="shadow-lg print:shadow-none print:border-0 print:rounded-none border-slate-200">
+          <Card className="neu-surface-soft print:shadow-none print:border-0 print:rounded-none">
             <CardContent className="p-8 md:p-12 space-y-8 print:p-12">
               {/* Header */}
-              <div className="flex justify-between items-start border-b-2 border-orange-500 pb-4">
+              <div className="flex justify-between items-start border-b-2 border-slate-300 pb-4">
                 <div>
                   <h1 className="text-3xl font-bold text-slate-900 mb-1">
                     INVOICE
@@ -238,9 +238,9 @@ export function BillingPreview() {
                   <p className="text-sm text-slate-600">Sewcut Billing System</p>
                 </div>
                 <div className="text-right">
-                  <div className="bg-orange-50 px-4 py-2 rounded-lg inline-block border border-orange-200">
+                  <div className="neu-inset px-4 py-2 rounded-lg inline-block">
                     <p className="text-xs text-slate-600 font-semibold">Invoice No.</p>
-                    <p className="text-xl font-bold text-orange-600">{data.billingNumber}</p>
+                    <p className="text-xl font-bold text-slate-800">{data.billingNumber}</p>
                   </div>
                 </div>
               </div>
@@ -368,9 +368,9 @@ export function BillingPreview() {
                       </span>
                     </div>
                   )}
-                  <div className="flex justify-between items-center pt-2 bg-orange-50 px-4 py-3 rounded-lg border border-orange-200">
+                  <div className="flex justify-between items-center pt-2 neu-inset px-4 py-3 rounded-lg">
                     <span className="text-base font-bold text-slate-900">GRAND TOTAL:</span>
-                    <span className="text-2xl font-bold text-orange-600">
+                    <span className="text-2xl font-bold text-slate-800">
                       {formatCurrency(data.grandTotal)}
                     </span>
                   </div>

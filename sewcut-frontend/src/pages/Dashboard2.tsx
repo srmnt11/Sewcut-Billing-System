@@ -9,7 +9,6 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowRight,
-  AlertCircle,
   Package,
   FileCheck,
   CheckCircle2,
@@ -33,7 +32,6 @@ import {
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import AlertsPanel from '@/components/dashboard/AlertsPanel';
 import OverdueInvoices from '@/components/dashboard/OverdueInvoices';
-import { useAuth } from '@/context/AuthContext';
 import { format, isAfter, addDays, startOfMonth, endOfMonth, subMonths, differenceInDays, isBefore, parseISO, formatDistanceToNow } from 'date-fns';
 
 // ----- Animated counter hook ------
@@ -64,8 +62,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function Dashboard2() {
-  const { user } = useAuth();
   const [chartTab, setChartTab] = useState<'revenue' | 'invoices'>('revenue');
+  const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const chartGridColor = isDarkMode ? 'rgba(148, 163, 184, 0.22)' : '#f1f5f9';
+  const chartAxisColor = isDarkMode ? '#cbd5e1' : '#94a3b8';
   
   const { data: invoices = [], isLoading: loadingInvoices } = useQuery<any[]>({
     queryKey: ['billings'],
@@ -243,8 +243,8 @@ export function Dashboard2() {
   const ChartTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-xl text-xs">
-        <p className="font-semibold text-slate-700 mb-1">{label}</p>
+      <div className="rounded-xl neu-surface-soft px-3 py-2 text-xs border border-white/40 dark:border-slate-500/30">
+        <p className="font-semibold text-slate-700 dark:text-slate-100 mb-1">{label}</p>
         {payload.map((p: any, i: number) => (
           <p key={i} style={{ color: p.color }} className="font-medium">
             {p.name}: ₱{(p.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -257,8 +257,8 @@ export function Dashboard2() {
   const CountTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-xl text-xs">
-        <p className="font-semibold text-slate-700 mb-1">{label}</p>
+      <div className="rounded-xl neu-surface-soft px-3 py-2 text-xs border border-white/40 dark:border-slate-500/30">
+        <p className="font-semibold text-slate-700 dark:text-slate-100 mb-1">{label}</p>
         {payload.map((p: any, i: number) => (
           <p key={i} style={{ color: p.color }} className="font-medium">{p.name}: {p.value}</p>
         ))}
@@ -270,40 +270,63 @@ export function Dashboard2() {
     <div className="space-y-6">
 
       {/* ===== HERO WELCOME ===== */}
-      <div className="relative rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+      <div className="relative neu-hero overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-orb1" />
-          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-orb2" />
-          <div className="absolute top-1/2 right-1/4 w-56 h-56 bg-emerald-500/10 rounded-full blur-2xl animate-orb3" />
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/60 rounded-full blur-3xl animate-orb1" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-white/50 rounded-full blur-3xl animate-orb2" />
+          <div className="absolute top-1/2 right-1/4 w-56 h-56 bg-white/40 rounded-full blur-2xl animate-orb3" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
         <div className="relative z-10 px-8 py-10">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-amber-400 text-sm font-medium">{format(now, 'EEEE, MMMM d, yyyy')}</span>
+                <span className="text-slate-500 text-sm font-medium">{format(now, 'EEEE, MMMM d, yyyy')}</span>
               </div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2">
-                Welcome back, <span className="text-amber-400">{user?.firstName || user?.username || 'Admin'}</span>
+              <h1 className="text-3xl lg:text-4xl font-bold text-slate-800 mb-2">
+                Welcome back
               </h1>
-              <p className="text-slate-400 max-w-lg text-base">
-                {overdueInvoices.length > 0 
-                  ? <span className="text-red-300">You have {overdueInvoices.length} overdue invoice{overdueInvoices.length > 1 ? 's' : ''} that need attention.</span>
-                  : `You have ${invoices.length} invoices, ${quotations.length} quotations, and ${clients.length} clients.`
-                }
-              </p>
+              <div className="flex items-center gap-6 mt-5">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 neu-press flex items-center justify-center">
+                    <DollarSign className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <div>
+                    <p className="text-slate-800 text-sm font-semibold">₱{animatedTotalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-slate-500 text-xs">Total Sales</p>
+                  </div>
+                </div>
+                <div className="w-px h-8 bg-white/60" />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 neu-press flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-slate-800 text-sm font-semibold">{invoices.length}</p>
+                    <p className="text-slate-500 text-xs">Invoices</p>
+                  </div>
+                </div>
+                <div className="w-px h-8 bg-white/60" />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 neu-press flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-slate-800 text-sm font-semibold">{overdueInvoices.length}</p>
+                    <p className="text-slate-500 text-xs">Overdue</p>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="flex gap-3 flex-shrink-0">
               <Link to={createPageUrl('Billing')}>
-                <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-white font-semibold shadow-lg shadow-amber-500/20 transition-all hover:shadow-amber-500/30 hover:scale-[1.02]">
+                <Button size="lg" className="text-slate-800">
                   <FileText className="w-4 h-4 mr-2" />
                   New Invoice
                 </Button>
               </Link>
               <Link to={createPageUrl('Quotations')}>
-                <Button size="lg" variant="outline" className="border-slate-600 text-slate-900 hover:bg-slate-700/60 hover:text-white transition-all">
+                <Button size="lg" variant="outline" className="text-slate-600">
                   <FileCheck className="w-4 h-4 mr-2" />
                   New Quotation
                 </Button>
@@ -322,129 +345,89 @@ export function Dashboard2() {
         ) : (
           <>
             {/* Total Sales */}
-            <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-gradient-to-br from-amber-500 to-orange-500">
+            <Card className="relative overflow-hidden neu-surface-soft group">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-amber-100 text-sm font-medium">Total Sales</p>
-                    <p className="text-3xl font-bold text-white mt-1 tracking-tight">
+                    <p className="text-slate-500 text-sm font-medium">Total Sales</p>
+                    <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">
                       ₱{animatedTotalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                     <div className="flex items-center gap-1.5 mt-2">
                       {revenueGrowth !== null ? (
                         <>
-                          <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${parseFloat(revenueGrowth) >= 0 ? 'bg-white/20 text-white' : 'bg-red-100/20 text-red-100'}`}>
+                          <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${parseFloat(revenueGrowth) >= 0 ? 'neu-chip text-emerald-600' : 'neu-chip text-rose-500'}`}>
                             {parseFloat(revenueGrowth) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             {Math.abs(parseFloat(revenueGrowth)) > 999 ? '>999' : Math.abs(parseFloat(revenueGrowth))}%
                           </span>
-                          <span className="text-amber-100 text-xs">vs last month</span>
+                          <span className="text-slate-500 text-xs">vs last month</span>
                         </>
                       ) : (
-                        <span className="text-amber-100 text-xs">No data for last month</span>
+                        <span className="text-slate-500 text-xs">No data for last month</span>
                       )}
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-white/20 group-hover:bg-white/30 transition-colors">
-                    <DollarSign className="w-6 h-6 text-white" />
+                  <div className="p-3 neu-press transition-colors">
+                    <DollarSign className="w-6 h-6 text-slate-700" />
                   </div>
                 </div>
               </CardContent>
-              <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
             </Card>
 
             {/* MTD Revenue */}
-            <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white">
+            <Card className="relative overflow-hidden neu-surface-soft group">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Month-to-Date</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">
+                    <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">
                       ₱{animatedMTD.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                     <p className="text-slate-500 text-xs mt-2">{mtdInvoices.length} invoices this month</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-emerald-50 group-hover:bg-emerald-100 transition-colors">
+                  <div className="p-3 neu-press transition-colors">
                     <TrendingUp className="w-6 h-6 text-emerald-600" />
                   </div>
                 </div>
               </CardContent>
-              <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-slate-100/60" />
             </Card>
 
             {/* Pending */}
-            <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white">
+            <Card className="relative overflow-hidden neu-surface-soft group">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="text-slate-500 text-sm font-medium">Pending Amount</p>
-                    <p className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">
+                    <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">
                       ₱{animatedPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                     <p className="text-slate-500 text-xs mt-2">{pendingCount + sentCount} awaiting payment</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-amber-50 group-hover:bg-amber-100 transition-colors">
+                  <div className="p-3 neu-press transition-colors">
                     <Clock className="w-6 h-6 text-amber-600" />
                   </div>
                 </div>
               </CardContent>
-              <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-slate-100/60" />
             </Card>
 
             {/* Clients */}
-            <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-slate-900">
+            <Card className="relative overflow-hidden neu-surface-soft group">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="text-slate-400 text-sm font-medium">Active Clients</p>
-                    <p className="text-3xl font-bold text-white mt-1 tracking-tight">{animatedClients}</p>
+                    <p className="text-slate-500 text-sm font-medium">Active Clients</p>
+                    <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">{animatedClients}</p>
                     <p className="text-slate-500 text-xs mt-2">{quotations.length} quotations sent</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-white/10 group-hover:bg-white/20 transition-colors">
-                    <Users className="w-6 h-6 text-white" />
+                  <div className="p-3 neu-press transition-colors">
+                    <Users className="w-6 h-6 text-slate-700" />
                   </div>
                 </div>
               </CardContent>
-              <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-white/5" />
             </Card>
           </>
         )}
       </div>
-
-      {/* ===== INVOICE PIPELINE ===== */}
-      {!isLoading && invoices.length > 0 && (
-        <Card className="border-0 shadow-sm overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-500" />
-              Invoice Pipeline
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pb-5">
-            <div className="flex items-center gap-2 overflow-x-auto py-2">
-              {[
-                { label: 'Pending', count: pendingCount, color: 'bg-amber-100 text-amber-700 border-amber-200', icon: <Clock className="w-3.5 h-3.5" /> },
-                { label: 'Sent', count: sentCount, color: 'bg-blue-100 text-blue-700 border-blue-200', icon: <Send className="w-3.5 h-3.5" /> },
-                { label: 'Partial Payment', count: partialPaymentCount, color: 'bg-purple-100 text-purple-700 border-purple-200', icon: <DollarSign className="w-3.5 h-3.5" /> },
-                { label: 'Delivered', count: deliveredCount, color: 'bg-cyan-100 text-cyan-700 border-cyan-200', icon: <Truck className="w-3.5 h-3.5" /> },
-                { label: 'Paid', count: paidCount, color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: <CheckCircle2 className="w-3.5 h-3.5" /> },
-              ].map((stage, idx, arr) => (
-                <React.Fragment key={stage.label}>
-                  <div className={`flex items-center gap-2 px-4 py-3 rounded-xl border ${stage.color} min-w-[140px] transition-transform hover:scale-105`}>
-                    {stage.icon}
-                    <div>
-                      <p className="text-xs font-medium opacity-70">{stage.label}</p>
-                      <p className="text-lg font-bold leading-none">{stage.count}</p>
-                    </div>
-                  </div>
-                  {idx < arr.length - 1 && (
-                    <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
-                  )}
-                </React.Fragment>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* ===== OVERDUE ===== */}
       {overdueInvoices.length > 0 && (
@@ -456,23 +439,23 @@ export function Dashboard2() {
       {/* ===== CHARTS ROW ===== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue / Invoice chart */}
-        <Card className="border-0 shadow-sm lg:col-span-2">
+        <Card className="neu-surface-soft lg:col-span-2">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-amber-500" />
                 Performance
               </CardTitle>
-              <div className="flex rounded-lg bg-slate-100 p-0.5">
+              <div className="flex rounded-lg neu-inset p-0.5">
                 <button
                   onClick={() => setChartTab('revenue')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartTab === 'revenue' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartTab === 'revenue' ? 'neu-press text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   Revenue
                 </button>
                 <button
                   onClick={() => setChartTab('invoices')}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartTab === 'invoices' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartTab === 'invoices' ? 'neu-press text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                   Invoices
                 </button>
@@ -483,7 +466,7 @@ export function Dashboard2() {
             <div className="h-72 mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 {chartTab === 'revenue' ? (
-                  <AreaChart data={revenueData}>
+                  <AreaChart data={revenueData} style={{ backgroundColor: 'transparent' }}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
@@ -494,18 +477,18 @@ export function Dashboard2() {
                         <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+                    <XAxis dataKey="month" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
                     <Tooltip content={<ChartTooltip />} />
                     <Area type="monotone" dataKey="billed" stroke="#3b82f6" strokeWidth={2} fill="url(#colorBilled)" name="Total Billed" />
                     <Area type="monotone" dataKey="revenue" stroke="#f59e0b" strokeWidth={2.5} fill="url(#colorRevenue)" name="Collected Revenue" />
                   </AreaChart>
                 ) : (
-                  <BarChart data={invoiceCountData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <BarChart data={invoiceCountData} style={{ backgroundColor: 'transparent' }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+                    <XAxis dataKey="month" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
                     <Tooltip content={<CountTooltip />} />
                     <Bar dataKey="count" fill="#f59e0b" radius={[6, 6, 0, 0]} name="Invoices" barSize={36} />
                   </BarChart>
@@ -516,7 +499,7 @@ export function Dashboard2() {
         </Card>
 
         {/* Status donut */}
-        <Card className="border-0 shadow-sm">
+        <Card className="neu-surface-soft">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <PieChartIcon className="w-4 h-4 text-amber-500" />
@@ -530,7 +513,7 @@ export function Dashboard2() {
               <>
                 <div className="h-48 mt-2">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
+                    <PieChart style={{ backgroundColor: 'transparent' }}>
                       <Pie
                         data={statusCounts}
                         cx="50%" cy="50%"
@@ -543,7 +526,20 @@ export function Dashboard2() {
                           <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || '#94a3b8'} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: any, name: any) => [`${value} invoices`, name]} />
+                      <Tooltip
+                        formatter={(value: any, name: any) => [`${value} invoices`, name]}
+                        contentStyle={{
+                          borderRadius: '12px',
+                          background: isDarkMode ? 'rgba(15, 23, 42, 0.96)' : '#e6e9ef',
+                          border: isDarkMode ? '1px solid rgba(148, 163, 184, 0.35)' : '0',
+                          boxShadow: isDarkMode
+                            ? '0 10px 24px rgba(2, 6, 23, 0.6)'
+                            : '8px 8px 18px rgba(163,177,198,0.35), -8px -8px 18px rgba(255,255,255,0.7)',
+                          color: isDarkMode ? '#e2e8f0' : '#334155',
+                        }}
+                        labelStyle={{ color: isDarkMode ? '#f8fafc' : '#334155', fontWeight: 700 }}
+                        itemStyle={{ color: isDarkMode ? '#cbd5e1' : '#334155' }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -570,7 +566,7 @@ export function Dashboard2() {
         </div>
 
         {/* Activity feed */}
-        <Card className="border-0 shadow-sm lg:col-span-2">
+        <Card className="neu-surface-soft lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <Calendar className="w-4 h-4 text-amber-500" />
@@ -580,22 +576,22 @@ export function Dashboard2() {
           <CardContent>
             <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
               {recentActivity.length === 0 ? (
-                <p className="text-slate-400 text-sm text-center py-8">No activity yet</p>
+                <p className="text-slate-400 dark:text-slate-300 text-sm text-center py-8">No activity yet</p>
               ) : (
                 recentActivity.map((act) => (
-                  <div key={act.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors group">
-                    <div className="mt-0.5 p-1.5 rounded-lg bg-white shadow-sm group-hover:shadow transition-shadow">{act.icon}</div>
+                  <div key={act.id} className="flex items-start gap-3 p-3 rounded-xl neu-inset transition-colors group">
+                    <div className="mt-0.5 p-1.5 rounded-lg neu-press transition-shadow">{act.icon}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{act.label}</p>
+                      <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{act.label}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-slate-200">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 neu-chip">
                           {act.status}
                         </Badge>
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-300">
                           ₱{act.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
-                      <p className="text-[10px] text-slate-400 mt-1">{act.time}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-300 mt-1">{act.time}</p>
                     </div>
                   </div>
                 ))
@@ -611,21 +607,21 @@ export function Dashboard2() {
       {/* ===== QUICK ACTIONS ===== */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { to: 'Clients', icon: Users, title: 'Manage Clients', desc: `${clients.length} clients registered`, color: 'group-hover:text-blue-500', bg: 'group-hover:bg-blue-50' },
-          { to: 'Reports', icon: BarChart3, title: 'View Reports', desc: 'Analytics & insights', color: 'group-hover:text-emerald-500', bg: 'group-hover:bg-emerald-50' },
-          { to: 'Suppliers', icon: Package, title: 'Suppliers', desc: 'Manage vendors', color: 'group-hover:text-purple-500', bg: 'group-hover:bg-purple-50' },
+          { to: 'Clients', icon: Users, title: 'Manage Clients', desc: `${clients.length} clients registered`, color: 'group-hover:text-blue-500 dark:group-hover:text-blue-300', bg: 'group-hover:bg-blue-50 dark:group-hover:bg-blue-500/15' },
+          { to: 'Reports', icon: BarChart3, title: 'View Reports', desc: 'Analytics & insights', color: 'group-hover:text-emerald-500 dark:group-hover:text-emerald-300', bg: 'group-hover:bg-emerald-50 dark:group-hover:bg-emerald-500/15' },
+          { to: 'Suppliers', icon: Package, title: 'Suppliers', desc: 'Manage vendors', color: 'group-hover:text-purple-500 dark:group-hover:text-purple-300', bg: 'group-hover:bg-purple-50 dark:group-hover:bg-purple-500/15' },
         ].map(item => (
           <Link key={item.to} to={createPageUrl(item.to)} className="group">
-            <div className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all duration-300">
+            <div className="neu-surface-soft p-6 transition-all duration-300 hover:translate-y-[-2px] dark:hover:bg-slate-800/60">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className={`p-2.5 rounded-xl bg-slate-50 ${item.bg} transition-colors inline-flex`}>
-                    <item.icon className={`w-6 h-6 text-slate-400 ${item.color} transition-colors`} />
+                  <div className={`p-2.5 rounded-xl neu-press transition-colors inline-flex ${item.bg}`}>
+                    <item.icon className={`w-6 h-6 text-slate-500 ${item.color} transition-colors`} />
                   </div>
-                  <h3 className="font-semibold mt-4 text-slate-900">{item.title}</h3>
-                  <p className="text-sm text-slate-500 mt-1">{item.desc}</p>
+                  <h3 className="font-semibold mt-4 text-slate-900 dark:text-slate-100">{item.title}</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-300 mt-1">{item.desc}</p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="w-5 h-5 text-slate-300 dark:text-slate-500 group-hover:text-slate-500 dark:group-hover:text-slate-300 group-hover:translate-x-1 transition-all" />
               </div>
             </div>
           </Link>

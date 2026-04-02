@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { api } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +10,6 @@ import {
   Settings as SettingsIcon, 
   Building2, 
   Bell, 
-  Palette,
   Save,
   Loader2,
   Mail,
@@ -76,32 +73,64 @@ export function Settings() {
       setIsSaving(false);
     }
   };
+  const filledCompanyFields = Object.values(companySettings).filter(value => String(value ?? '').trim().length > 0).length;
+  const enabledNotifications = Object.values(notifications).filter(Boolean).length;
+  const settingsSections = 3;
 
   return (
     <div className="space-y-6">
       {/* ===== HERO HEADER ===== */}
-      <div className="relative rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+      <div className="relative neu-hero overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-orb1" />
-          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-orb2" />
-          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-blue-500/8 rounded-full blur-2xl animate-orb3" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/60 rounded-full blur-3xl animate-orb1" />
+          <div className="absolute bottom-0 left-1/3 w-72 h-72 bg-white/50 rounded-full blur-3xl animate-orb2" />
+          <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
-        <div className="relative z-10 px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative z-10 hero-content px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <SettingsIcon className="w-5 h-5 text-amber-400" />
-              <span className="text-amber-400 text-sm font-medium">Settings</span>
+              <SettingsIcon className="w-5 h-5 text-slate-500" />
+              <span className="text-slate-500 text-sm font-medium">Settings</span>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-1">Application Settings</h1>
-            <p className="text-slate-400 text-base">Manage your preferences and company information</p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-1">Application Settings</h1>
+            <div className="hero-stat-row flex items-center gap-6 mt-5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <Building2 className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{filledCompanyFields}</p>
+                  <p className="text-slate-500 text-xs">Fields Set</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <Bell className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{enabledNotifications}</p>
+                  <p className="text-slate-500 text-xs">Alerts On</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <SettingsIcon className="w-4 h-4 text-slate-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{settingsSections}</p>
+                  <p className="text-slate-500 text-xs">Sections</p>
+                </div>
+              </div>
+            </div>
           </div>
           <Button
             size="lg"
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-amber-500 hover:bg-amber-400 text-white font-semibold shadow-lg shadow-amber-500/20 transition-all hover:shadow-amber-500/30 hover:scale-[1.02]"
+            className="text-slate-700"
           >
             {isSaving ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -114,16 +143,16 @@ export function Settings() {
       </div>
 
       <Tabs defaultValue="company" className="space-y-6">
-        <TabsList className="bg-slate-100 p-1 rounded-xl">
-          <TabsTrigger value="company" className="gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+        <TabsList className="neu-inset p-1 rounded-xl w-full justify-start flex-wrap gap-1">
+          <TabsTrigger value="company" className="gap-2 rounded-lg data-[state=active]:neu-press data-[state=active]:text-slate-800">
             <Building2 className="w-4 h-4" />
             Company
           </TabsTrigger>
-          <TabsTrigger value="invoicing" className="gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="invoicing" className="gap-2 rounded-lg data-[state=active]:neu-press data-[state=active]:text-slate-800">
             <SettingsIcon className="w-4 h-4" />
             Invoicing
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="gap-2 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+          <TabsTrigger value="notifications" className="gap-2 rounded-lg data-[state=active]:neu-press data-[state=active]:text-slate-800">
             <Bell className="w-4 h-4" />
             Notifications
           </TabsTrigger>
@@ -131,7 +160,7 @@ export function Settings() {
 
         {/* Company Settings */}
         <TabsContent value="company">
-          <Card className="border-0 shadow-sm rounded-2xl">
+          <Card className="neu-surface-soft rounded-2xl">
             <CardHeader>
               <CardTitle>Company Information</CardTitle>
               <CardDescription>
@@ -228,7 +257,7 @@ export function Settings() {
 
         {/* Invoicing Settings */}
         <TabsContent value="invoicing">
-          <Card className="border-0 shadow-sm rounded-2xl">
+          <Card className="neu-surface-soft rounded-2xl">
             <CardHeader>
               <CardTitle>Invoicing Preferences</CardTitle>
               <CardDescription>
@@ -280,7 +309,7 @@ export function Settings() {
               </div>
 
               {/* Bank Details */}
-              <div className="pt-4 border-t">
+              <div className="pt-4 border-t border-white/70">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4">Bank Details (shown on invoices)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -318,7 +347,7 @@ export function Settings() {
 
         {/* Notification Settings */}
         <TabsContent value="notifications">
-          <Card className="border-0 shadow-sm rounded-2xl">
+          <Card className="neu-surface-soft rounded-2xl">
             <CardHeader>
               <CardTitle>Email Notifications</CardTitle>
               <CardDescription>
@@ -327,7 +356,7 @@ export function Settings() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:shadow-sm transition-all">
+                <div className="flex items-center justify-between p-4 neu-inset rounded-xl transition-all">
                   <div>
                     <p className="font-medium">Payment Received</p>
                     <p className="text-sm text-slate-500">Get notified when a client pays an invoice</p>
@@ -337,7 +366,7 @@ export function Settings() {
                     onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, email_on_payment: checked }))}
                   />
                 </div>
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:shadow-sm transition-all">
+                <div className="flex items-center justify-between p-4 neu-inset rounded-xl transition-all">
                   <div>
                     <p className="font-medium">Overdue Invoice Alert</p>
                     <p className="text-sm text-slate-500">Get notified when an invoice becomes overdue</p>
@@ -347,7 +376,7 @@ export function Settings() {
                     onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, email_on_overdue: checked }))}
                   />
                 </div>
-                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:shadow-sm transition-all">
+                <div className="flex items-center justify-between p-4 neu-inset rounded-xl transition-all">
                   <div>
                     <p className="font-medium">Quotation Approved</p>
                     <p className="text-sm text-slate-500">Get notified when a client approves a quotation</p>

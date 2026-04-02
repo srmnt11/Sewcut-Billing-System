@@ -9,7 +9,11 @@
  * @returns The formatted URL path
  */
 export function createPageUrl(page: string, params?: Record<string, string>): string {
-  let url = `/${page.toLowerCase()}`;
+  const normalizedPage = page
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/\s+/g, '-')
+    .toLowerCase();
+  let url = `/${normalizedPage}`;
   
   if (params) {
     const searchParams = new URLSearchParams(params);

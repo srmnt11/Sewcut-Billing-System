@@ -207,38 +207,38 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-[var(--neu-bg)] flex">
       {/* Left Side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 p-12 flex-col justify-between relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 neu-hero p-12 flex-col justify-between relative overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-orange-500 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl"></div>
         </div>
         
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
-              <FileText className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 neu-press rounded-xl flex items-center justify-center">
+              <FileText className="w-7 h-7 text-slate-700" />
             </div>
             <div>
-              <h2 className="text-white text-xl font-bold">Sewcut</h2>
-              <p className="text-slate-400 text-sm">Apparel Manufacturing</p>
+              <h2 className="text-slate-800 text-xl font-bold">Sewcut</h2>
+              <p className="text-slate-500 text-sm">Apparel Manufacturing</p>
             </div>
           </div>
           
           <div className="mt-16 space-y-6">
-            <h1 className="text-4xl font-bold text-white leading-tight">
+            <h1 className="text-4xl font-bold text-slate-800 leading-tight">
               Join Sewcut<br />Billing System
             </h1>
-            <p className="text-slate-300 text-lg">
+            <p className="text-slate-500 text-lg">
               Create your account and start managing your business more efficiently.
             </p>
           </div>
         </div>
 
         <div className="relative z-10">
-          <p className="text-slate-400 text-sm">
+          <p className="text-slate-500 text-sm">
             Trusted by apparel manufacturing businesses
           </p>
         </div>
@@ -249,8 +249,8 @@ export function Register() {
         <div className="w-full max-w-md">
           <div className="mb-6">
             <div className="lg:hidden flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
-                <FileText className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 neu-press rounded-xl flex items-center justify-center">
+                <FileText className="w-6 h-6 text-slate-700" />
               </div>
               <div>
                 <h2 className="text-slate-900 text-lg font-bold">Sewcut</h2>
@@ -261,10 +261,10 @@ export function Register() {
             <p className="text-slate-600">Get started with Sewcut Billing System</p>
           </div>
 
-          <Card className="shadow-lg border border-slate-200">
+          <Card className="neu-surface-soft">
           <CardContent className="p-8">
             {errors.general && (
-              <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+              <div className="mb-6 neu-inset rounded-lg p-4 flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-800">{errors.general}</p>
               </div>
@@ -435,11 +435,11 @@ export function Register() {
                 )}
               </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white shadow-md h-11"
-                disabled={isLoading || Object.values(errors).some(e => e !== undefined)}
-              >
+                <Button
+                  type="submit"
+                  className="w-full text-slate-700 h-11"
+                  disabled={isLoading || Object.values(errors).some(e => e !== undefined)}
+                >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -453,7 +453,7 @@ export function Register() {
 
             <div className="mt-6 text-center text-sm text-slate-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-orange-600 hover:text-orange-700 font-semibold">
+              <Link to="/login" className="text-slate-700 hover:text-slate-900 font-semibold">
                 Sign in
               </Link>
             </div>

@@ -248,7 +248,7 @@ def generate_quotation_pdf(quotation):
     elements.append(Paragraph('<b>*Deposit all payments to:</b>', _s('DEP', 9, TEXT_NORMAL, sa=4)))
     deposit = Table([
         [Paragraph('<font color="#dc2626"><b>BDO Account Name:</b></font>', _s('BN', 9, TEXT_NORMAL, sa=2)),
-         Paragraph('<b>SEW-CUT WEARING APPAREL MANUFACTURING</b>', _s('BV', 9, TEXT_NORMAL, sa=2))],
+         Paragraph('<b>SEWCUT WEARING APPAREL MANUFACTURING</b>', _s('BV', 9, TEXT_NORMAL, sa=2))],
         [Paragraph('<b>Account Number:</b>', _s('AN', 9, TEXT_NORMAL, sa=2)),
          Paragraph('012258002502', _s('AV', 9, TEXT_NORMAL, sa=2))],
     ], colWidths=[W * 0.28, W * 0.72])

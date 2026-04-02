@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { Inbox } from 'lucide-react';
 
 interface Column {
-  header: string;
+  header: React.ReactNode;
   accessor?: string;
   cell?: (row: any) => React.ReactNode;
   className?: string;
@@ -45,10 +45,10 @@ export default function DataTable({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 overflow-hidden bg-white shadow-sm">
+    <div className="rounded-2xl neu-surface-soft overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="bg-gradient-to-r from-slate-50 to-slate-100/80 hover:bg-slate-50 border-b border-slate-200/80">
+          <TableRow className="neu-inset hover:bg-transparent border-b border-white/60">
             {columns.map((column, index) => (
               <TableHead 
                 key={index}
@@ -64,13 +64,13 @@ export default function DataTable({
         </TableHeader>
         <TableBody>
           {data.length === 0 ? (
-            <TableRow>
+            <TableRow className="hover:bg-transparent dark:hover:bg-transparent">
               <TableCell 
                 colSpan={columns.length} 
                 className="text-center py-16"
               >
                 <div className="flex flex-col items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-2xl neu-press flex items-center justify-center">
                     <Inbox className="w-7 h-7 text-slate-400" />
                   </div>
                   <div>
@@ -85,8 +85,8 @@ export default function DataTable({
               <TableRow 
                 key={row.id || rowIndex}
                 className={cn(
-                  "hover:bg-amber-50/40 transition-all duration-150 border-b border-slate-100 last:border-0",
-                  onRowClick && "cursor-pointer active:bg-amber-50/60"
+                  "hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-all duration-150 border-b border-white/60 last:border-0",
+                  onRowClick && "cursor-pointer active:bg-slate-100/80 dark:active:bg-slate-800/65"
                 )}
                 onClick={() => onRowClick?.(row)}
               >

@@ -35,7 +35,7 @@ class BillingSerializer(serializers.ModelSerializer):
         fields = ['id', 'billing_number', 'client', 'company_name', 'billing_date', 
                   'due_date', 'company_email', 'company_phone', 'company_address',
                   'subtotal', 'tax_rate', 'tax_amount', 'discount', 'grand_total', 
-                  'notes', 'terms', 'status', 'items', 'created_at', 'updated_at']
+                  'notes', 'terms', 'status', 'source_quotation', 'items', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
     def to_representation(self, instance):
@@ -58,6 +58,7 @@ class BillingSerializer(serializers.ModelSerializer):
             'notes': data['notes'],
             'terms': data['terms'],
             'status': data['status'],
+            'sourceQuotationId': data.get('source_quotation'),
             'items': data.get('items', []),
             'createdAt': data['created_at'],
             'updatedAt': data['updated_at'],
@@ -81,6 +82,7 @@ class BillingSerializer(serializers.ModelSerializer):
             'notes': data.get('notes', ''),
             'terms': data.get('terms', ''),
             'status': data.get('status', 'Draft'),
+            'source_quotation': data.get('sourceQuotationId'),
         }
         if 'items' in data:
             internal['items'] = data['items']

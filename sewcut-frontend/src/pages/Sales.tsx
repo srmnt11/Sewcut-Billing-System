@@ -115,7 +115,7 @@ export function Sales() {
   const ChartTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xl text-xs">
+      <div className="rounded-xl neu-surface-soft px-4 py-3 text-xs">
         <p className="font-semibold text-slate-700 mb-1">{label}</p>
         {payload.map((p: any, i: number) => (
           <p key={i} style={{ color: p.color }} className="font-medium">
@@ -175,26 +175,55 @@ export function Sales() {
   return (
     <div className="space-y-6">
       {/* ===== HERO HEADER ===== */}
-      <div className="relative rounded-2xl overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900" />
+      <div className="relative neu-hero overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-orb1" />
-          <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl animate-orb2" />
-          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-teal-500/8 rounded-full blur-2xl animate-orb3" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/60 rounded-full blur-3xl animate-orb1" />
+          <div className="absolute bottom-0 left-1/4 w-72 h-72 bg-white/50 rounded-full blur-3xl animate-orb2" />
+          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
-        <div className="relative z-10 px-8 py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="relative z-10 hero-content px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <ShoppingCart className="w-5 h-5 text-amber-400" />
-              <span className="text-amber-400 text-sm font-medium">Sales Performance</span>
+              <ShoppingCart className="w-5 h-5 text-slate-500" />
+              <span className="text-slate-500 text-sm font-medium">Sales Performance</span>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-1">Sales Overview</h1>
-            <p className="text-slate-400 text-base">Track revenue, transactions, and growth trends</p>
+            <h1 className="text-3xl font-bold text-slate-800 mb-1">Sales Overview</h1>
+            <div className="hero-stat-row flex items-center gap-6 mt-5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">₱{animatedSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-slate-500 text-xs">Total Sales</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <ShoppingCart className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{animatedTransactions}</p>
+                  <p className="text-slate-500 text-xs">Transactions</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">₱{animatedPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-slate-500 text-xs">Pending</p>
+                </div>
+              </div>
+            </div>
           </div>
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-40 bg-white/10 border-white/20 text-white hover:bg-white/20">
-              <Calendar className="w-4 h-4 mr-2 text-amber-400" />
+            <SelectTrigger className="w-40 neu-inset text-slate-700">
+              <Calendar className="w-4 h-4 mr-2 text-slate-500" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -210,93 +239,90 @@ export function Sales() {
       {/* ===== STATS CARDS ===== */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Total Sales */}
-        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-gradient-to-br from-amber-500 to-orange-500">
+        <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-amber-100 text-sm font-medium">Total Sales</p>
-                <p className="text-3xl font-bold text-white mt-1 tracking-tight">
+                <p className="text-slate-500 text-sm font-medium">Total Sales</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">
                   ₱{animatedSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
                 <div className="flex items-center gap-1.5 mt-2">
                   {growthPercent !== null ? (
                     <>
-                      <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${parseFloat(growthPercent) >= 0 ? 'bg-white/20 text-white' : 'bg-red-100/20 text-red-100'}`}>
+                      <span className={`inline-flex items-center gap-0.5 text-xs font-semibold px-2 py-0.5 rounded-full ${parseFloat(growthPercent) >= 0 ? 'neu-chip text-emerald-600' : 'neu-chip text-rose-500'}`}>
                         {parseFloat(growthPercent) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                         {Math.abs(parseFloat(growthPercent)) > 999 ? '>999' : Math.abs(parseFloat(growthPercent))}%
                       </span>
-                      <span className="text-amber-100 text-xs">vs previous period</span>
+                      <span className="text-slate-500 text-xs">vs previous period</span>
                     </>
                   ) : (
-                    <span className="text-amber-100 text-xs">No data for previous period</span>
+                    <span className="text-slate-500 text-xs">No data for previous period</span>
                   )}
                 </div>
               </div>
-              <div className="p-3 rounded-xl bg-white/20 group-hover:bg-white/30 transition-colors">
-                <DollarSign className="w-6 h-6 text-white" />
+              <div className="p-3 neu-press transition-colors">
+                <DollarSign className="w-6 h-6 text-slate-700" />
               </div>
             </div>
           </CardContent>
-          <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-white/10" />
         </Card>
 
         {/* Pending Revenue */}
-        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white">
+        <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-slate-500 text-sm font-medium">Pending Revenue</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">
+                <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">
                   ₱{animatedPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </p>
                 <p className="text-slate-500 text-xs mt-2">
                   {filteredInvoices.filter(i => i.status !== 'Paid').length} invoices pending
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-amber-50 group-hover:bg-amber-100 transition-colors">
+              <div className="p-3 neu-press transition-colors">
                 <TrendingUp className="w-6 h-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
-          <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-slate-100/60" />
         </Card>
 
         {/* Transactions */}
-        <Card className="relative overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group bg-white">
+        <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-slate-500 text-sm font-medium">Transactions</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1 tracking-tight">{animatedTransactions}</p>
+                <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">{animatedTransactions}</p>
                 <p className="text-slate-500 text-xs mt-2">Completed sales this period</p>
               </div>
-              <div className="p-3 rounded-xl bg-emerald-50 group-hover:bg-emerald-100 transition-colors">
+              <div className="p-3 neu-press transition-colors">
                 <ShoppingCart className="w-6 h-6 text-emerald-600" />
               </div>
             </div>
           </CardContent>
-          <div className="absolute -bottom-6 -right-6 w-28 h-28 rounded-full bg-slate-100/60" />
         </Card>
       </div>
 
       {/* ===== SALES CHART ===== */}
-      <Card className="border-0 shadow-sm">
+      <Card className="neu-surface-soft">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-semibold flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-amber-500" />
               Sales Trend
             </CardTitle>
-            <div className="flex rounded-lg bg-slate-100 p-0.5">
+            <div className="flex rounded-lg neu-inset p-0.5">
               <button
                 onClick={() => setChartMode('amount')}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartMode === 'amount' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartMode === 'amount' ? 'neu-press text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Revenue
               </button>
               <button
                 onClick={() => setChartMode('count')}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartMode === 'count' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${chartMode === 'count' ? 'neu-press text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Volume
               </button>
@@ -335,7 +361,7 @@ export function Sales() {
       </Card>
 
       {/* ===== RECENT SALES TABLE ===== */}
-      <Card className="border-0 shadow-sm">
+      <Card className="neu-surface-soft">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-amber-500" />

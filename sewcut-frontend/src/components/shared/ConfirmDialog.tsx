@@ -34,27 +34,27 @@ const variantConfig: Record<DialogVariant, {
 }> = {
   danger: {
     icon: Trash2,
-    iconBg: 'bg-red-100',
-    iconColor: 'text-red-600',
-    confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
+    iconBg: 'neu-press',
+    iconColor: 'text-rose-600',
+    confirmClass: 'neu-press text-rose-600 hover:text-rose-700',
   },
   warning: {
     icon: AlertTriangle,
-    iconBg: 'bg-amber-100',
+    iconBg: 'neu-press',
     iconColor: 'text-amber-600',
-    confirmClass: 'bg-amber-500 hover:bg-amber-600 text-white',
+    confirmClass: 'neu-press text-amber-700 hover:text-amber-800',
   },
   info: {
     icon: Info,
-    iconBg: 'bg-blue-100',
+    iconBg: 'neu-press',
     iconColor: 'text-blue-600',
-    confirmClass: 'bg-blue-600 hover:bg-blue-700 text-white',
+    confirmClass: 'neu-press text-blue-700 hover:text-blue-800',
   },
   success: {
     icon: CheckCircle2,
-    iconBg: 'bg-emerald-100',
+    iconBg: 'neu-press',
     iconColor: 'text-emerald-600',
-    confirmClass: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+    confirmClass: 'neu-press text-emerald-700 hover:text-emerald-800',
   },
 };
 

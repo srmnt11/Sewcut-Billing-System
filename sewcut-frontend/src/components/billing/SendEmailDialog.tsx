@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ interface SendEmailDialogProps {
   onSend: (emailData: { to: string; subject: string; message: string }) => void;
   billing: any;
   isLoading?: boolean;
+  documentType?: 'Invoice' | 'Quotation' | 'Delivery Receipt';
 }
 
 export default function SendEmailDialog({
@@ -19,22 +20,54 @@ export default function SendEmailDialog({
   onClose,
   onSend,
   billing,
-  isLoading = false
+  isLoading = false,
+  documentType = 'Invoice',
 }: SendEmailDialogProps) {
-  const [emailData, setEmailData] = useState({
-    to: billing?.companyEmail || '',
-    subject: `Invoice ${billing?.billingNumber || ''} from Sewcut`,
-    message: `Dear ${billing?.companyName || 'Valued Client'},
+  const documentNumber = billing?.billingNumber || billing?.quotationNumber || billing?.receiptNumber || '';
+  const documentTypeLower = documentType.toLowerCase();
+  const deliveryDate = billing?.deliveryDate || 'N/A';
+  const referenceNumber = billing?.referenceNumber || 'N/A';
 
-Please find attached the invoice ${billing?.billingNumber || ''} for your review.
+  const buildDefaultMessage = () => {
+    if (documentType === 'Delivery Receipt') {
+      return `Dear ${billing?.companyName || 'Valued Client'},
 
-Total Amount: ₱{billing?.grandTotal?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+Please find attached the delivery receipt ${documentNumber} for your reference.
+
+Delivery Date: ${deliveryDate}
+Reference Number: ${referenceNumber}
 
 If you have any questions, please don't hesitate to contact us.
 
 Best regards,
-Sewcut Team`
+Sewcut Team`;
+    }
+
+    return `Dear ${billing?.companyName || 'Valued Client'},
+
+Please find attached the ${documentTypeLower} ${documentNumber} for your review.
+
+Total Amount: ₱${billing?.grandTotal?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+
+If you have any questions, please don't hesitate to contact us.
+
+Best regards,
+Sewcut Team`;
+  };
+
+  const buildInitialEmailData = () => ({
+    to: billing?.companyEmail || '',
+    subject: `${documentType} ${documentNumber} from Sewcut`,
+    message: buildDefaultMessage()
   });
+
+  const [emailData, setEmailData] = useState(buildInitialEmailData);
+
+  useEffect(() => {
+    if (open) {
+      setEmailData(buildInitialEmailData());
+    }
+  }, [open, billing, documentType]);
 
   const handleSend = () => {
     onSend(emailData);
@@ -45,13 +78,13 @@ Sewcut Team`
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl neu-press flex items-center justify-center">
               <Mail className="w-5 h-5 text-blue-600" />
             </div>
-            Send Invoice via Email
+            Send {documentType} via Email
           </DialogTitle>
           <DialogDescription>
-            Send invoice {billing?.billingNumber} to client with PDF attachment
+            Send {documentTypeLower} {documentNumber} to client with PDF attachment
           </DialogDescription>
         </DialogHeader>
 
@@ -74,7 +107,7 @@ Sewcut Team`
             <Input
               value={emailData.subject}
               onChange={(e) => setEmailData(prev => ({ ...prev, subject: e.target.value }))}
-              placeholder="Invoice subject"
+              placeholder={`${documentType} subject`}
               className="mt-1"
             />
           </div>
@@ -92,25 +125,25 @@ Sewcut Team`
           </div>
 
           {/* Info */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 rounded-xl p-4 flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+          <div className="neu-inset rounded-xl p-4 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg neu-press flex items-center justify-center flex-shrink-0 mt-0.5">
               <Paperclip className="w-4 h-4 text-blue-600" />
             </div>
             <div>
               <p className="font-medium text-blue-800 text-sm">PDF will be automatically attached</p>
-              <p className="text-xs text-blue-600 mt-0.5">The invoice PDF will be generated and attached to this email</p>
+              <p className="text-xs text-blue-600 mt-0.5">The {documentTypeLower} PDF will be generated and attached to this email</p>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-200/80">
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/60">
             <Button variant="outline" onClick={onClose} disabled={isLoading} className="rounded-xl">
               <X className="w-4 h-4 mr-2" /> Cancel
             </Button>
             <Button
               onClick={handleSend}
               disabled={isLoading || !emailData.to || !emailData.subject || !emailData.message}
-              className="bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm"
+              className="rounded-xl"
             >
               <Send className="w-4 h-4 mr-2" />
               {isLoading ? 'Sending...' : 'Send Email'}

@@ -8,11 +8,11 @@ export function StatusBadge({
   status
 }: StatusBadgeProps) {
   const styles = {
-    Draft: 'bg-gray-100 text-gray-700',
-    Generated: 'bg-blue-100 text-blue-700',
-    Emailed: 'bg-green-100 text-green-700'
+    Draft: 'text-slate-600',
+    Generated: 'text-blue-700',
+    Emailed: 'text-emerald-700'
   };
-  return <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', styles[status])}>
+  return <span className={cn('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium neu-chip', styles[status])}>
       {status}
     </span>;
 }
