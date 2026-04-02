@@ -1,2 +1,16 @@
 # Ignore backend virtual environment
 sewcut-backend/venv/
+
+# Ignore Python cache and compiled files
+**/__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+
