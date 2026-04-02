@@ -1,0 +1,234 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 215 20.2% 65.1%;
+
+    --radius: 0.5rem;
+  }
+
+  :root[class~="dark"] {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 56.9%;
+
+    --accent: 216 34% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --popover: 224 71% 4%;
+    --popover-foreground: 215 20.2% 65.1%;
+
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+
+    --card: 224 71% 4%;
+    --card-foreground: 213 31% 91%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 1.2%;
+
+    --secondary: 222.2 47.4% 11.2%;
+    --secondary-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 216 34% 17%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* ============================================================
+   PAGE TRANSITION
+   ============================================================ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-transition { animation: fadeInUp 0.3s ease-out; }
+
+/* ============================================================
+   FLOATING ORBS  (replaces simple animate-pulse on hero blobs)
+   ============================================================ */
+@keyframes floatOrb1 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.12; }
+  33%       { transform: translate(30px, -40px) scale(1.08); opacity: 0.18; }
+  66%       { transform: translate(-20px, 20px) scale(0.94); opacity: 0.10; }
+}
+@keyframes floatOrb2 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.10; }
+  40%       { transform: translate(-40px, -30px) scale(1.12); opacity: 0.16; }
+  80%       { transform: translate(25px, 35px) scale(0.92); opacity: 0.08; }
+}
+@keyframes floatOrb3 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.07; }
+  50%       { transform: translate(20px, -25px) scale(1.10); opacity: 0.12; }
+}
+
+.animate-orb1 { animation: floatOrb1 8s ease-in-out infinite; }
+.animate-orb2 { animation: floatOrb2 11s ease-in-out infinite; animation-delay: 1.5s; }
+.animate-orb3 { animation: floatOrb3 14s ease-in-out infinite; animation-delay: 3s; }
+
+/* ============================================================
+   SECTION / CARD ENTRANCE  (staggered fade+slide-up)
+   ============================================================ */
+@keyframes sectionEnter {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.section-enter   { animation: sectionEnter 0.55s cubic-bezier(.22,1,.36,1) both; }
+.section-enter-1 { animation: sectionEnter 0.55s cubic-bezier(.22,1,.36,1) 0.05s both; }
+.section-enter-2 { animation: sectionEnter 0.55s cubic-bezier(.22,1,.36,1) 0.12s both; }
+.section-enter-3 { animation: sectionEnter 0.55s cubic-bezier(.22,1,.36,1) 0.20s both; }
+.section-enter-4 { animation: sectionEnter 0.55s cubic-bezier(.22,1,.36,1) 0.28s both; }
+.section-enter-5 { animation: sectionEnter 0.55s cubic-bezier(.22,1,.36,1) 0.36s both; }
+
+/* ============================================================
+   CARD HOVER LIFT
+   ============================================================ */
+.card-hover {
+  transition: transform 0.2s cubic-bezier(.22,1,.36,1),
+              box-shadow 0.2s cubic-bezier(.22,1,.36,1);
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px -8px rgba(15, 23, 42, 0.12);
+}
+
+/* ============================================================
+   SHIMMER BUTTON  (amber primary action buttons)
+   ============================================================ */
+@keyframes shimmerSweep {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+.btn-shimmer-amber {
+  background: linear-gradient(
+    90deg,
+    #f97316 0%, #fb923c 35%, #fcd34d 50%, #fb923c 65%, #f97316 100%
+  );
+  background-size: 200% auto;
+  transition: background-position 0.6s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-shimmer-amber:hover:not(:disabled) {
+  background-position: right center;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -4px rgba(249, 115, 22, 0.45);
+}
+.btn-shimmer-amber:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* ============================================================
+   STAT CARD GRADIENT SHIMMER BORDER  (optional accent)
+   ============================================================ */
+@keyframes borderGlow {
+  0%, 100% { opacity: 0.3; }
+  50%       { opacity: 0.6; }
+}
+.stat-card-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(249,115,22,0.4), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: borderGlow 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ============================================================
+   LEGACY BLOB  (kept for backwards compat)
+   ============================================================ */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25%       { transform: translate(20px, -50px) scale(1.1); }
+  50%       { transform: translate(-20px, 20px) scale(0.9); }
+  75%       { transform: translate(10px, 50px) scale(1.05); }
+}
+.animate-blob { animation: blob 7s infinite; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+
+/* Print Styles - Only show invoice content */
+@media print {
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  /* Hide everything except the invoice content */
+  body > div > div:first-child,
+  nav,
+  button,
+  .print\\:hidden {
+    display: none !important;
+  }
+  
+  /* Make the main container take full page */
+  main {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  /* Remove card styling for clean print */
+  .shadow-lg,
+  [class*="shadow"] {
+    box-shadow: none !important;
+  }
+  
+  /* Ensure invoice content is visible and full-width */
+  [class*="Card"] {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+}

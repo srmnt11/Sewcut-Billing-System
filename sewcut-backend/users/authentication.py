@@ -1,0 +1,74 @@
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import serializers
+from django.contrib.auth import authenticate
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """Custom JWT token serializer with enhanced validation"""
+    
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def validate(self, attrs):
+        username = attrs.get('username', '').strip()
+        password = attrs.get('password', '')
+
+        # Validate username is not empty
+        if not username:
+            raise serializers.ValidationError({
+                'username': 'Username is required.'
+            })
+
+        # Validate password is not empty
+        if not password:
+            raise serializers.ValidationError({
+                'password': 'Password is required.'
+            })
+
+        # Check if user exists
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError({
+                'detail': 'No account found with this username.'
+            })
+
+        # Check if user is active
+        if not user.is_active:
+            raise serializers.ValidationError({
+                'detail': 'This account has been deactivated. Please contact support.'
+            })
+
+        # Authenticate user
+        user = authenticate(username=username, password=password)
+        if user is None:
+            raise serializers.ValidationError({
+                'detail': 'Invalid password. Please try again.'
+            })
+
+        # Get token data
+        refresh = self.get_token(user)
+        
+        data = {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'firstName': user.first_name,
+                'lastName': user.last_name,
+                'role': user.role,
+            }
+        }
+
+        return data
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Custom JWT token view with enhanced validation"""
+    serializer_class = CustomTokenObtainPairSerializer
