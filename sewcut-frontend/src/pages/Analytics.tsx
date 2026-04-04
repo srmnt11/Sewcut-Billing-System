@@ -18,8 +18,9 @@ import {
   Area,
   AreaChart
 } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
-import { TrendingUp, TrendingDown, DollarSign, FileText, Users, BarChart3, PieChart as PieChartIcon, Target, ArrowRight } from 'lucide-react';
+import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns';
+import { TrendingUp, TrendingDown, DollarSign, FileText, Users, BarChart3, PieChart as PieChartIcon, Target, ArrowRight, Calendar } from 'lucide-react';
+import AdvancedFilter, { FilterConfig } from '@/components/shared/AdvancedFilter';
 
 const STATUS_COLORS: Record<string, string> = {
   Draft: '#94a3b8',
@@ -48,9 +49,11 @@ function useAnimatedValue(target: number, duration = 800) {
 
 export function Analytics() {
   const [chartTab, setChartTab] = useState<'revenue' | 'pending'>('revenue');
+  const [advancedFilters, setAdvancedFilters] = useState<FilterConfig>({});
   const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   const chartGridColor = isDarkMode ? 'rgba(148, 163, 184, 0.22)' : '#f1f5f9';
   const chartAxisColor = isDarkMode ? '#cbd5e1' : '#94a3b8';
+  const chartHoverCursor = isDarkMode ? 'rgba(148, 163, 184, 0.14)' : 'rgba(148, 163, 184, 0.12)';
 
   const { data: invoices = [], isLoading: loadingInvoices } = useQuery<any[]>({
     queryKey: ['billings'],
@@ -69,6 +72,42 @@ export function Analytics() {
 
   const isLoading = loadingInvoices || loadingQuotations || loadingClients;
 
+  const defaultRangeEnd = endOfDay(new Date());
+  const defaultRangeStart = startOfDay(subDays(defaultRangeEnd, 29));
+
+  const activeRangeStart = advancedFilters.dateRange?.start
+    ? startOfDay(new Date(advancedFilters.dateRange.start))
+    : defaultRangeStart;
+  const activeRangeEnd = advancedFilters.dateRange?.end
+    ? endOfDay(new Date(advancedFilters.dateRange.end))
+    : defaultRangeEnd;
+
+  const filteredInvoices = invoices.filter(inv => {
+    const createdAt = new Date(inv.createdAt);
+    const amount = parseFloat(inv.grandTotal) || 0;
+
+    const matchesDateRange = isWithinInterval(createdAt, { start: activeRangeStart, end: activeRangeEnd });
+    const matchesStatus = !advancedFilters.status?.length || advancedFilters.status.includes(inv.status);
+    const matchesAmountRange = !advancedFilters.amountRange ||
+      (amount >= advancedFilters.amountRange.min && amount <= advancedFilters.amountRange.max);
+
+    return matchesDateRange && matchesStatus && matchesAmountRange;
+  });
+
+  const filteredQuotations = quotations.filter(q => {
+    const createdAt = new Date(q.createdAt);
+    const amount = parseFloat(q.grandTotal) || 0;
+
+    const matchesDateRange = isWithinInterval(createdAt, { start: activeRangeStart, end: activeRangeEnd });
+    const matchesAmountRange = !advancedFilters.amountRange ||
+      (amount >= advancedFilters.amountRange.min && amount <= advancedFilters.amountRange.max);
+
+    return matchesDateRange && matchesAmountRange;
+  });
+
+  const maxAmount = Math.max(...invoices.map((inv: any) => parseFloat(inv.grandTotal) || 0), 100000);
+  const rangeLabel = `${format(activeRangeStart, 'MMM d, yyyy')} - ${format(activeRangeEnd, 'MMM d, yyyy')}`;
+
   // Calculate monthly revenue data
   const getMonthlyData = () => {
     const months = [];
@@ -77,7 +116,7 @@ export function Analytics() {
       const start = startOfMonth(date);
       const end = endOfMonth(date);
       
-      const monthInvoices = invoices.filter(inv => {
+      const monthInvoices = filteredInvoices.filter(inv => {
         const invDate = new Date(inv.createdAt);
         return isWithinInterval(invDate, { start, end });
       });
@@ -106,11 +145,11 @@ export function Analytics() {
   // Invoice status distribution
   const getStatusDistribution = () => {
     const statusCount: Record<string, number> = {
-      Draft: invoices.filter((i: any) => i.status === 'Draft').length,
-      Sent: invoices.filter((i: any) => i.status === 'Sent').length,
-      'Partial Payment': invoices.filter((i: any) => i.status === 'Partial Payment').length,
-      Delivered: invoices.filter((i: any) => i.status === 'Delivered').length,
-      Paid: invoices.filter((i: any) => i.status === 'Paid').length
+      Draft: filteredInvoices.filter((i: any) => i.status === 'Draft').length,
+      Sent: filteredInvoices.filter((i: any) => i.status === 'Sent').length,
+      'Partial Payment': filteredInvoices.filter((i: any) => i.status === 'Partial Payment').length,
+      Delivered: filteredInvoices.filter((i: any) => i.status === 'Delivered').length,
+      Paid: filteredInvoices.filter((i: any) => i.status === 'Paid').length
     };
 
     return Object.entries(statusCount)
@@ -121,7 +160,7 @@ export function Analytics() {
   // Top clients by revenue
   const getTopClients = () => {
     const clientRevenue: Record<string, number> = {};
-    invoices.forEach(inv => {
+    filteredInvoices.forEach(inv => {
       const amount = parseFloat(inv.grandTotal) || 0;
       let revenue = 0;
       if (inv.status === 'Paid' || inv.status === 'Delivered') revenue = amount;
@@ -139,10 +178,10 @@ export function Analytics() {
 
   // Quotation conversion rate
   const getQuotationStats = () => {
-    const total = quotations.length;
-    const approved = quotations.filter(q => q.status === 'Accepted').length;
-    const rejected = quotations.filter(q => q.status === 'Rejected').length;
-    const pending = quotations.filter(q => q.status === 'Sent' || q.status === 'Draft').length;
+    const total = filteredQuotations.length;
+    const approved = filteredQuotations.filter(q => q.status === 'Accepted').length;
+    const rejected = filteredQuotations.filter(q => q.status === 'Rejected').length;
+    const pending = filteredQuotations.filter(q => q.status === 'Sent' || q.status === 'Draft').length;
     return { total, approved, rejected, pending, rate: total > 0 ? ((approved / total) * 100).toFixed(1) : '0' };
   };
 
@@ -151,7 +190,7 @@ export function Analytics() {
   const topClients = getTopClients();
   const quotationStats = getQuotationStats();
 
-  const totalRevenue = invoices.reduce((sum, inv) => {
+  const totalRevenue = filteredInvoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
     if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
@@ -159,12 +198,12 @@ export function Analytics() {
   }, 0);
 
   // Compare current month vs last month
-  const now = new Date();
+  const now = activeRangeEnd;
   const thisMonthStart = startOfMonth(now);
   const lastMonthStart = startOfMonth(subMonths(now, 1));
   const lastMonthEnd = endOfMonth(subMonths(now, 1));
 
-  const thisMonthRevenue = invoices.filter(inv => {
+  const thisMonthRevenue = filteredInvoices.filter(inv => {
     const invDate = new Date(inv.createdAt);
     return isWithinInterval(invDate, { start: thisMonthStart, end: now });
   }).reduce((sum, inv) => {
@@ -174,7 +213,7 @@ export function Analytics() {
     return sum;
   }, 0);
 
-  const lastMonthRevenue = invoices.filter(inv => {
+  const lastMonthRevenue = filteredInvoices.filter(inv => {
     const invDate = new Date(inv.createdAt);
     return isWithinInterval(invDate, { start: lastMonthStart, end: lastMonthEnd });
   }).reduce((sum, inv) => {
@@ -189,7 +228,7 @@ export function Analytics() {
     : null;
 
   const animatedRevenue = useAnimatedValue(Math.round(totalRevenue));
-  const animatedInvoices = useAnimatedValue(invoices.length);
+  const animatedInvoices = useAnimatedValue(filteredInvoices.length);
   const animatedClients = useAnimatedValue(clients.filter(c => c.status === 'active').length);
 
   const ChartTooltip = ({ active, payload, label }: any) => {
@@ -247,11 +286,19 @@ export function Analytics() {
           <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
         <div className="relative z-10 px-8 py-8">
-          <div className="flex items-center gap-2 mb-1">
-            <BarChart3 className="w-5 h-5 text-slate-500" />
-            <span className="text-slate-500 text-sm font-medium">Analytics & Insights</span>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <BarChart3 className="w-5 h-5 text-slate-500" />
+                <span className="text-slate-500 text-sm font-medium">Analytics & Insights</span>
+              </div>
+              <h1 className="text-3xl font-bold text-slate-800 mb-1">Business Analytics</h1>
+            </div>
+            <div className="neu-inset rounded-xl px-4 py-3 text-slate-600 text-sm flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-slate-500" />
+              <span>{rangeLabel}</span>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-1">Business Analytics</h1>
           <div className="flex items-center gap-6 mt-5">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 neu-press flex items-center justify-center">
@@ -269,7 +316,7 @@ export function Analytics() {
               </div>
               <div>
                 <p className="text-slate-800 text-sm font-semibold">{animatedInvoices}</p>
-                <p className="text-slate-500 text-xs">Invoices</p>
+                <p className="text-slate-500 text-xs">Filtered Invoices</p>
               </div>
             </div>
             <div className="w-px h-8 bg-white/60" />
@@ -285,6 +332,13 @@ export function Analytics() {
           </div>
         </div>
       </div>
+
+      <AdvancedFilter
+        filters={advancedFilters}
+        onFilterChange={setAdvancedFilters}
+        availableStatuses={['Draft', 'Pending', 'Sent', 'Partial Payment', 'Delivered', 'Paid']}
+        maxAmount={maxAmount}
+      />
 
       {/* ===== STATS CARDS ===== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -325,7 +379,7 @@ export function Analytics() {
               <div>
                 <p className="text-slate-500 text-sm font-medium">Total Invoices</p>
                 <p className="text-3xl font-bold text-slate-800 mt-1 tracking-tight">{animatedInvoices}</p>
-                <p className="text-slate-500 text-xs mt-2">{invoices.filter((i: any) => i.status === 'Paid' || i.status === 'Delivered').length} completed</p>
+                <p className="text-slate-500 text-xs mt-2">{filteredInvoices.filter((i: any) => i.status === 'Paid' || i.status === 'Delivered').length} completed</p>
               </div>
               <div className="p-3 neu-press transition-colors">
                 <FileText className="w-6 h-6 text-blue-600" />
@@ -411,7 +465,7 @@ export function Analytics() {
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
                     <XAxis dataKey="name" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
-                    <Tooltip content={<ChartTooltip />} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: chartHoverCursor }} />
                     <Area type="monotone" dataKey="pending" stroke="#3b82f6" strokeWidth={2} fill="url(#colorAnalyticsPending)" name="Pending" />
                     <Area type="monotone" dataKey="revenue" stroke="#f59e0b" strokeWidth={2.5} fill="url(#colorAnalyticsRevenue)" name="Revenue" />
                   </AreaChart>
@@ -420,7 +474,7 @@ export function Analytics() {
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
                     <XAxis dataKey="name" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
-                    <Tooltip content={<CountTooltip />} />
+                    <Tooltip content={<CountTooltip />} cursor={{ fill: chartHoverCursor }} />
                     <Bar dataKey="count" fill="#f59e0b" radius={[6, 6, 0, 0]} name="Invoices" barSize={36} />
                   </BarChart>
                 )}
@@ -507,7 +561,7 @@ export function Analytics() {
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
                     <XAxis type="number" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v/1000}k`} />
                     <YAxis type="category" dataKey="name" stroke={chartAxisColor} fontSize={12} width={100} tickLine={false} axisLine={false} />
-                    <Tooltip content={<ChartTooltip />} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: chartHoverCursor }} />
                     <Bar dataKey="value" fill="#f59e0b" radius={[0, 6, 6, 0]} name="Revenue" barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>

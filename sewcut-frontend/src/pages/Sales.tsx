@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { format, subDays, isAfter } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay, addDays, differenceInCalendarDays, isWithinInterval } from 'date-fns';
 import { DollarSign, TrendingUp, TrendingDown, ShoppingCart, BarChart3, Calendar } from 'lucide-react';
 import {
   XAxis,
@@ -19,6 +18,7 @@ import {
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
+import AdvancedFilter, { FilterConfig } from '@/components/shared/AdvancedFilter';
 
 function useAnimatedValue(target: number, duration = 800) {
   const [value, setValue] = React.useState(0);
@@ -37,18 +37,39 @@ function useAnimatedValue(target: number, duration = 800) {
 }
 
 export function Sales() {
-  const [period, setPeriod] = useState('30');
   const [chartMode, setChartMode] = useState<'amount' | 'count'>('amount');
+  const [advancedFilters, setAdvancedFilters] = useState<FilterConfig>({});
+  const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+  const chartGridColor = isDarkMode ? 'rgba(148, 163, 184, 0.22)' : '#f1f5f9';
+  const chartAxisColor = isDarkMode ? '#cbd5e1' : '#94a3b8';
+  const chartHoverCursor = isDarkMode ? 'rgba(148, 163, 184, 0.14)' : 'rgba(148, 163, 184, 0.12)';
 
   const { data: invoices = [], isLoading } = useQuery<any[]>({
     queryKey: ['billings'],
     queryFn: () => api.entities.Billing.list('-createdAt')
   });
 
-  const cutoffDate = subDays(new Date(), parseInt(period));
-  const filteredInvoices = invoices.filter(inv => 
-    isAfter(new Date(inv.createdAt), cutoffDate)
-  );
+  const defaultRangeEnd = endOfDay(new Date());
+  const defaultRangeStart = startOfDay(subDays(defaultRangeEnd, 29));
+
+  const activeRangeStart = advancedFilters.dateRange?.start
+    ? startOfDay(new Date(advancedFilters.dateRange.start))
+    : defaultRangeStart;
+  const activeRangeEnd = advancedFilters.dateRange?.end
+    ? endOfDay(new Date(advancedFilters.dateRange.end))
+    : defaultRangeEnd;
+
+  const filteredInvoices = invoices.filter(inv => {
+    const createdAt = new Date(inv.createdAt);
+    const amount = parseFloat(inv.grandTotal) || 0;
+
+    const matchesDateRange = isWithinInterval(createdAt, { start: activeRangeStart, end: activeRangeEnd });
+    const matchesStatus = !advancedFilters.status?.length || advancedFilters.status.includes(inv.status);
+    const matchesAmountRange = !advancedFilters.amountRange ||
+      (amount >= advancedFilters.amountRange.min && amount <= advancedFilters.amountRange.max);
+
+    return matchesDateRange && matchesStatus && matchesAmountRange;
+  });
 
   const totalSales = filteredInvoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
@@ -68,10 +89,13 @@ export function Sales() {
     return sum;
   }, 0);
 
-  const prevCutoff = subDays(cutoffDate, parseInt(period));
+  const windowDays = Math.max(1, differenceInCalendarDays(activeRangeEnd, activeRangeStart) + 1);
+  const prevEnd = endOfDay(subDays(activeRangeStart, 1));
+  const prevStart = startOfDay(subDays(prevEnd, windowDays - 1));
+
   const prevInvoices = invoices.filter(inv => {
     const date = new Date(inv.createdAt);
-    return isAfter(date, prevCutoff) && !isAfter(date, cutoffDate);
+    return isWithinInterval(date, { start: prevStart, end: prevEnd });
   });
   const prevSales = prevInvoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
@@ -86,10 +110,9 @@ export function Sales() {
       : null;
 
   const getDailySalesData = () => {
-    const days = parseInt(period);
     const data = [];
-    for (let i = days - 1; i >= 0; i--) {
-      const date = subDays(new Date(), i);
+    for (let i = 0; i < windowDays; i++) {
+      const date = addDays(activeRangeStart, i);
       const dateStr = format(date, 'yyyy-MM-dd');
       const dayInvoices = paidInvoices.filter(
         inv => format(new Date(inv.createdAt), 'yyyy-MM-dd') === dateStr
@@ -111,14 +134,17 @@ export function Sales() {
   const animatedSales = useAnimatedValue(Math.round(totalSales));
   const animatedPending = useAnimatedValue(Math.round(pendingAmount));
   const animatedTransactions = useAnimatedValue(paidInvoices.length);
+  const maxAmount = Math.max(...invoices.map((inv: any) => parseFloat(inv.grandTotal) || 0), 100000);
+
+  const rangeLabel = `${format(activeRangeStart, 'MMM d, yyyy')} - ${format(activeRangeEnd, 'MMM d, yyyy')}`;
 
   const ChartTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="rounded-xl neu-surface-soft px-4 py-3 text-xs">
-        <p className="font-semibold text-slate-700 mb-1">{label}</p>
+      <div className="rounded-xl neu-surface-soft px-4 py-3 text-xs border border-white/40 dark:border-slate-500/30">
+        <p className="font-semibold text-slate-700 dark:text-slate-100 mb-1">{label}</p>
         {payload.map((p: any, i: number) => (
-          <p key={i} style={{ color: p.color }} className="font-medium">
+          <p key={i} style={{ color: p.color }} className="font-medium dark:text-slate-100">
             {p.name}: {p.dataKey === 'count' ? p.value : `₱${(p.value || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
           </p>
         ))}
@@ -221,20 +247,19 @@ export function Sales() {
               </div>
             </div>
           </div>
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-40 neu-inset text-slate-700">
-              <Calendar className="w-4 h-4 mr-2 text-slate-500" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Last 7 days</SelectItem>
-              <SelectItem value="30">Last 30 days</SelectItem>
-              <SelectItem value="90">Last 90 days</SelectItem>
-              <SelectItem value="365">Last year</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="neu-inset rounded-xl px-4 py-3 text-slate-600 text-sm flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-slate-500" />
+            <span>{rangeLabel}</span>
+          </div>
         </div>
       </div>
+
+      <AdvancedFilter
+        filters={advancedFilters}
+        onFilterChange={setAdvancedFilters}
+        availableStatuses={['Pending', 'Sent', 'Partial Payment', 'Delivered', 'Paid', 'Cancelled']}
+        maxAmount={maxAmount}
+      />
 
       {/* ===== STATS CARDS ===== */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -340,18 +365,18 @@ export function Sales() {
                       <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} interval={Math.floor(parseInt(period) / 10)} />
-                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
-                  <Tooltip content={<ChartTooltip />} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+                  <XAxis dataKey="date" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} interval={Math.max(0, Math.floor(windowDays / 10))} />
+                  <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
+                  <Tooltip content={<ChartTooltip />} cursor={{ fill: chartHoverCursor }} />
                   <Area type="monotone" dataKey="sales" stroke="#f59e0b" strokeWidth={2.5} fill="url(#colorSalesAmount)" name="Sales" />
                 </AreaChart>
               ) : (
                 <BarChart data={getDailySalesData()}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} interval={Math.floor(parseInt(period) / 10)} />
-                  <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
-                  <Tooltip content={<ChartTooltip />} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
+                  <XAxis dataKey="date" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} interval={Math.max(0, Math.floor(windowDays / 10))} />
+                  <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip content={<ChartTooltip />} cursor={{ fill: chartHoverCursor }} />
                   <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} name="Transactions" barSize={20} />
                 </BarChart>
               )}

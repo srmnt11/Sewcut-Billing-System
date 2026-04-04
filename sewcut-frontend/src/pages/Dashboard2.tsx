@@ -66,6 +66,7 @@ export function Dashboard2() {
   const isDarkMode = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
   const chartGridColor = isDarkMode ? 'rgba(148, 163, 184, 0.22)' : '#f1f5f9';
   const chartAxisColor = isDarkMode ? '#cbd5e1' : '#94a3b8';
+  const chartHoverCursor = isDarkMode ? 'rgba(148, 163, 184, 0.14)' : 'rgba(148, 163, 184, 0.12)';
   
   const { data: invoices = [], isLoading: loadingInvoices } = useQuery<any[]>({
     queryKey: ['billings'],
@@ -331,6 +332,12 @@ export function Dashboard2() {
                   New Quotation
                 </Button>
               </Link>
+              <Link to={createPageUrl('DeliveryReceipts')}>
+                <Button size="lg" variant="outline" className="text-slate-600">
+                  <Truck className="w-4 h-4 mr-2" />
+                  New Delivery Receipt
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -480,7 +487,7 @@ export function Dashboard2() {
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
                     <XAxis dataKey="month" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
-                    <Tooltip content={<ChartTooltip />} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: chartHoverCursor }} />
                     <Area type="monotone" dataKey="billed" stroke="#3b82f6" strokeWidth={2} fill="url(#colorBilled)" name="Total Billed" />
                     <Area type="monotone" dataKey="revenue" stroke="#f59e0b" strokeWidth={2.5} fill="url(#colorRevenue)" name="Collected Revenue" />
                   </AreaChart>
@@ -489,7 +496,7 @@ export function Dashboard2() {
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
                     <XAxis dataKey="month" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
-                    <Tooltip content={<CountTooltip />} />
+                    <Tooltip content={<CountTooltip />} cursor={{ fill: chartHoverCursor }} />
                     <Bar dataKey="count" fill="#f59e0b" radius={[6, 6, 0, 0]} name="Invoices" barSize={36} />
                   </BarChart>
                 )}

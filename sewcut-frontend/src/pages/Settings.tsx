@@ -143,7 +143,8 @@ export function Settings() {
       </div>
 
       <Tabs defaultValue="company" className="space-y-6">
-        <TabsList className="neu-inset p-1 rounded-xl w-full justify-start flex-wrap gap-1">
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="neu-inset p-1 rounded-xl w-fit min-w-max justify-start gap-1">
           <TabsTrigger value="company" className="gap-2 rounded-lg data-[state=active]:neu-press data-[state=active]:text-slate-800">
             <Building2 className="w-4 h-4" />
             Company
@@ -156,7 +157,8 @@ export function Settings() {
             <Bell className="w-4 h-4" />
             Notifications
           </TabsTrigger>
-        </TabsList>
+          </TabsList>
+        </div>
 
         {/* Company Settings */}
         <TabsContent value="company">
