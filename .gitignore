@@ -1,6 +1,13 @@
 # Ignore backend virtual environment
 sewcut-backend/venv/
 
+# Ignore backend environment files with secrets
+sewcut-backend/.env
+sewcut-backend/.env.*
+!sewcut-backend/.env.example
+!sewcut-backend/.env.production.example
+sewcut-backend/staticfiles/
+
 # Ignore Python cache and compiled files
 **/__pycache__/
 *.py[cod]

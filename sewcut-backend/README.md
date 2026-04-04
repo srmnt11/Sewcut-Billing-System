@@ -118,3 +118,51 @@ sewcut-backend/
 - Simple JWT 5.3.1
 - Django CORS Headers 4.3.1
 - SQLite (can be changed to PostgreSQL/MySQL)
+
+## Deploying to Render
+
+This backend is now configured for Render using:
+- `render.yaml`
+- `Procfile`
+- `build.sh`
+
+### Option A: Blueprint Deploy (recommended)
+
+1. Push this repository to GitHub.
+2. In Render, click **New +** -> **Blueprint**.
+3. Select your repo and confirm the `render.yaml` plan.
+4. Render will create:
+	- A web service (`sewcut-backend`)
+	- A Postgres database (`sewcut-db`)
+5. After deploy completes, open:
+	- `https://<your-render-domain>/admin/`
+	- `https://<your-render-domain>/api/auth/`
+
+### Option B: Manual Web Service Setup
+
+If you do not use Blueprint:
+- **Root Directory**: `sewcut-backend`
+- **Build Command**: `bash build.sh`
+- **Start Command**: `gunicorn sewcut.wsgi:application --bind 0.0.0.0:$PORT`
+
+### Required Environment Variables
+
+Set these in Render -> Service -> Environment:
+
+- `DEBUG=False`
+- `SECRET_KEY=<long-random-secret>`
+- `DATABASE_URL=<Render Postgres Internal/External URL>`
+- `ALLOWED_HOSTS=<your-service>.onrender.com`
+- `CORS_ALLOWED_ORIGINS=https://sewcut-transaction-system.vercel.app`
+- `CSRF_TRUSTED_ORIGINS=https://sewcut-transaction-system.vercel.app`
+
+Optional hardening flags (already supported by settings):
+
+- `SECURE_SSL_REDIRECT=True`
+- `SECURE_HSTS_SECONDS=31536000`
+- `SECURE_HSTS_INCLUDE_SUBDOMAINS=True`
+- `SECURE_HSTS_PRELOAD=True`
+
+### Frontend Connection
+
+In your Vercel frontend project, set the backend API base URL to your Render backend domain after deployment.

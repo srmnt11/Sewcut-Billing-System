@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: sewcut-backend
+    env: python
+    plan: free
+    region: singapore
+    rootDir: sewcut-backend
+    buildCommand: bash build.sh
+    startCommand: gunicorn sewcut.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.4
+      - key: DEBUG
+        value: False
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: sewcut-backend.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://sewcut-transaction-system.vercel.app
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://sewcut-transaction-system.vercel.app
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sewcut-db
+          property: connectionString
+
+databases:
+  - name: sewcut-db
+    plan: free
+    region: singapore

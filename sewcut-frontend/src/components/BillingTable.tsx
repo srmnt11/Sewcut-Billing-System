@@ -28,7 +28,7 @@ export function BillingTable({ billings }: BillingTableProps) {
 
   const handleDownloadPdf = async (billingNumber: string) => {
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
       const response = await fetch(`${API_BASE_URL}/billings/${billingNumber}/download-pdf`);
       
       if (!response.ok) {

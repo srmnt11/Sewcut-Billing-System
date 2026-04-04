@@ -14,8 +14,25 @@ from pathlib import Path
 import os
 import urllib.parse
 
+from dotenv import load_dotenv
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
+
+
+def env_bool(name, default=False):
+    """Parse boolean environment variables safely."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def env_csv(name, default=''):
+    """Parse comma-separated environment variables into a clean list."""
+    raw = os.environ.get(name, default)
+    return [item.strip() for item in raw.split(',') if item.strip()]
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,10 +42,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-t3#%grsz7&cbslls-79q+h-3-i2cg(q^3r@&v^%4ob)72%&%d#')
 
 # DEBUG should be False in production. Set environment var to 'True' to enable.
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = env_bool('DEBUG', True)
 
 # ALLOWED_HOSTS can be provided as a comma-separated env var
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = env_csv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+
+# Render exposes the public hostname as RENDER_EXTERNAL_HOSTNAME.
+render_external_hostname = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
+if render_external_hostname and render_external_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_external_hostname)
 
 
 # Application definition
@@ -172,12 +194,15 @@ AUTH_USER_MODEL = 'users.User'
 # otherwise fall back to allowing all origins (safer to set explicit origins in prod).
 cors_env = os.environ.get('CORS_ALLOWED_ORIGINS')
 if cors_env:
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in cors_env.split(',') if o.strip()]
+    CORS_ALLOWED_ORIGINS = env_csv('CORS_ALLOWED_ORIGINS')
     CORS_ALLOW_ALL_ORIGINS = False
 else:
     CORS_ALLOW_ALL_ORIGINS = True
 
-CORS_ALLOW_CREDENTIALS = os.environ.get('CORS_ALLOW_CREDENTIALS', 'True') == 'True'
+CORS_ALLOW_CREDENTIALS = env_bool('CORS_ALLOW_CREDENTIALS', True)
+
+# Needed for secure admin/login flows behind HTTPS proxies.
+CSRF_TRUSTED_ORIGINS = env_csv('CSRF_TRUSTED_ORIGINS')
 
 # REST Framework Settings
 REST_FRAMEWORK = {
@@ -205,10 +230,19 @@ SIMPLE_JWT = {
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_USE_TLS = env_bool('EMAIL_USE_TLS', True)
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 # For testing/development you can set EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', True)
+    SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', 31536000))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', True)
+    SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', True)
 
