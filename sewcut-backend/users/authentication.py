@@ -3,6 +3,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
+from rest_framework.throttling import ScopedRateThrottle
 
 User = get_user_model()
 
@@ -29,13 +30,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 'password': 'Password is required.'
             })
 
+        # Use a generic response to prevent username enumeration attacks.
+        invalid_credentials = serializers.ValidationError({
+            'detail': 'Invalid username or password.'
+        })
+
         # Check if user exists
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
-            raise serializers.ValidationError({
-                'detail': 'No account found with this username.'
-            })
+            raise invalid_credentials
 
         # Check if user is active
         if not user.is_active:
@@ -46,9 +50,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Authenticate user
         user = authenticate(username=username, password=password)
         if user is None:
-            raise serializers.ValidationError({
-                'detail': 'Invalid password. Please try again.'
-            })
+            raise invalid_credentials
 
         # Get token data
         refresh = self.get_token(user)
@@ -72,3 +74,5 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class CustomTokenObtainPairView(TokenObtainPairView):
     """Custom JWT token view with enhanced validation"""
     serializer_class = CustomTokenObtainPairSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
