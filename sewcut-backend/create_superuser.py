@@ -17,6 +17,7 @@ email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@sewcut.com')
 password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', '')
 role = os.environ.get('DJANGO_SUPERUSER_ROLE', 'admin')
 debug = os.environ.get('DEBUG', 'True').strip().lower() in {'1', 'true', 'yes', 'on'}
+sync_credentials = os.environ.get('DJANGO_SUPERUSER_SYNC_CREDENTIALS', 'False').strip().lower() in {'1', 'true', 'yes', 'on'}
 
 if not password and debug:
     # Local development fallback only.
@@ -26,7 +27,9 @@ if not password and not debug:
     print('Skipping superuser creation: DJANGO_SUPERUSER_PASSWORD is not set.')
     raise SystemExit(0)
 
-if not User.objects.filter(username=username).exists():
+user = User.objects.filter(username=username).first()
+
+if not user:
     User.objects.create_superuser(
         username=username,
         email=email,
@@ -38,3 +41,12 @@ if not User.objects.filter(username=username).exists():
     print(f'Email: {email}')
 else:
     print('Superuser already exists')
+    if sync_credentials and password:
+        user.email = email
+        user.role = role
+        user.set_password(password)
+        user.is_active = True
+        user.is_staff = True
+        user.is_superuser = True
+        user.save(update_fields=['email', 'role', 'password', 'is_active', 'is_staff', 'is_superuser'])
+        print('Superuser credentials synchronized from environment')
