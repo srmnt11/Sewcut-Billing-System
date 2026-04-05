@@ -37,7 +37,7 @@ def send_quotation_email(request, pk):
     try:
         # Generate PDF
         pdf_buffer = generate_quotation_pdf(quotation)
-        send_email_with_pdf_attachment(
+        delivery = send_email_with_pdf_attachment(
             subject=subject,
             message=message,
             to_email=to_email,
@@ -55,7 +55,9 @@ def send_quotation_email(request, pk):
         return Response({
             'message': 'Email sent successfully',
             'quotation_number': quotation.quotation_number,
-            'sent_to': to_email
+            'sent_to': delivery.get('delivered_to', to_email),
+            'provider': delivery.get('provider', 'unknown'),
+            'redirected': delivery.get('redirected', False),
         })
         
     except Exception as e:

@@ -21,9 +21,18 @@ def send_email_with_pdf_attachment(subject, message, to_email, filename, file_by
     timeout = int(getattr(settings, 'EMAIL_TIMEOUT', 20))
 
     if resend_api_key and resend_from_email:
+        test_recipient = os.environ.get('RESEND_TEST_RECIPIENT_EMAIL', '').strip()
+        delivered_to = to_email
+        redirected = False
+
+        # Resend's default testing sender only allows sending to your own account email.
+        if resend_from_email.endswith('@resend.dev') and test_recipient and to_email != test_recipient:
+            delivered_to = test_recipient
+            redirected = True
+
         payload = {
             'from': resend_from_email,
-            'to': [to_email],
+            'to': [delivered_to],
             'subject': subject,
             'text': message or '',
             'attachments': [
@@ -45,8 +54,12 @@ def send_email_with_pdf_attachment(subject, message, to_email, filename, file_by
             timeout=timeout,
         )
         if 200 <= response.status_code < 300:
-            logger.info('Email delivered via Resend API to %s', to_email)
-            return
+            logger.info('Email delivered via Resend API to %s', delivered_to)
+            return {
+                'provider': 'resend',
+                'delivered_to': delivered_to,
+                'redirected': redirected,
+            }
 
         raise RuntimeError(
             f'Resend API failed ({response.status_code}): {response.text[:300]}'
@@ -62,6 +75,11 @@ def send_email_with_pdf_attachment(subject, message, to_email, filename, file_by
         email.attach(filename, file_bytes, 'application/pdf')
         email.send(fail_silently=False)
         logger.info('Email delivered via SMTP to %s', to_email)
+        return {
+            'provider': 'smtp',
+            'delivered_to': to_email,
+            'redirected': False,
+        }
     except OSError as exc:
         if getattr(exc, 'errno', None) == 101:
             raise RuntimeError(

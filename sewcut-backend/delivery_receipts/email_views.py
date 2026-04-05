@@ -29,7 +29,7 @@ def send_delivery_receipt_email(request, pk):
 
     try:
         pdf_buffer = generate_delivery_receipt_pdf(receipt)
-        send_email_with_pdf_attachment(
+        delivery = send_email_with_pdf_attachment(
             subject=subject,
             message=message,
             to_email=to_email,
@@ -37,7 +37,15 @@ def send_delivery_receipt_email(request, pk):
             file_bytes=pdf_buffer.getvalue(),
         )
 
-        return Response({'message': 'Delivery receipt sent successfully'}, status=status.HTTP_200_OK)
+        return Response(
+            {
+                'message': 'Delivery receipt sent successfully',
+                'sent_to': delivery.get('delivered_to', to_email),
+                'provider': delivery.get('provider', 'unknown'),
+                'redirected': delivery.get('redirected', False),
+            },
+            status=status.HTTP_200_OK,
+        )
     except Exception as exc:
         logger.error('Error sending delivery receipt email: %s', str(exc))
         return Response({'error': f'Failed to send email: {str(exc)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
