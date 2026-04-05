@@ -35,6 +35,15 @@ def env_csv(name, default=''):
     return [item.strip() for item in raw.split(',') if item.strip()]
 
 
+def env_str(name, default=''):
+    """Read string environment variables and treat empty values as missing."""
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    value = raw.strip()
+    return value if value else default
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -222,9 +231,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 100,
     'DEFAULT_THROTTLE_RATES': {
-        'anon': os.environ.get('THROTTLE_ANON_RATE', '100/hour'),
-        'user': os.environ.get('THROTTLE_USER_RATE', '1000/hour'),
-        'login': os.environ.get('THROTTLE_LOGIN_RATE', '10/minute'),
+        'anon': env_str('THROTTLE_ANON_RATE', '100/hour'),
+        'user': env_str('THROTTLE_USER_RATE', '1000/hour'),
+        'login': env_str('THROTTLE_LOGIN_RATE', '10/minute'),
     },
 }
 
@@ -239,13 +248,23 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': True,
 }
 
-# Prefer Argon2 for stronger password hashing in production environments.
-PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-]
+# Use PBKDF2 by default; allow opting into Argon2 with USE_ARGON2_HASHER=True.
+if env_bool('USE_ARGON2_HASHER', False):
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.Argon2PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+        'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    ]
+else:
+    PASSWORD_HASHERS = [
+        'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+        'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+        'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    ]
+
+# Disable public user registration in production by default.
+ENABLE_PUBLIC_REGISTRATION = env_bool('ENABLE_PUBLIC_REGISTRATION', DEBUG)
 
 # Email Settings - read from environment in production
 EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')

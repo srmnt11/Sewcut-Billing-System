@@ -4,8 +4,10 @@ from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
 from rest_framework.throttling import ScopedRateThrottle
+import logging
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -48,7 +50,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             })
 
         # Authenticate user
-        user = authenticate(username=username, password=password)
+        try:
+            user = authenticate(username=username, password=password)
+        except Exception:
+            logger.exception('Unexpected authentication backend failure during login')
+            raise serializers.ValidationError({
+                'detail': 'Authentication temporarily unavailable. Please try again.'
+            })
+
         if user is None:
             raise invalid_credentials
 
