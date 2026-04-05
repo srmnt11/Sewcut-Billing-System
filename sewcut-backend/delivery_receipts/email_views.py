@@ -1,6 +1,4 @@
 import logging
-from django.conf import settings
-from django.core.mail import EmailMessage
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
@@ -8,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import DeliveryReceipt
 from .pdf_generator import generate_delivery_receipt_pdf
+from sewcut.email_delivery import send_email_with_pdf_attachment
 
 logger = logging.getLogger(__name__)
 
@@ -30,19 +29,13 @@ def send_delivery_receipt_email(request, pk):
 
     try:
         pdf_buffer = generate_delivery_receipt_pdf(receipt)
-
-        email = EmailMessage(
+        send_email_with_pdf_attachment(
             subject=subject,
-            body=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[to_email],
+            message=message,
+            to_email=to_email,
+            filename=f'DeliveryReceipt_{receipt.receipt_number}.pdf',
+            file_bytes=pdf_buffer.getvalue(),
         )
-        email.attach(
-            f'DeliveryReceipt_{receipt.receipt_number}.pdf',
-            pdf_buffer.getvalue(),
-            'application/pdf',
-        )
-        email.send(fail_silently=False)
 
         return Response({'message': 'Delivery receipt sent successfully'}, status=status.HTTP_200_OK)
     except Exception as exc:
