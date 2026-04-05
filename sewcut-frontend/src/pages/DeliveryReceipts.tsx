@@ -261,11 +261,22 @@ export function DeliveryReceipts() {
   const sendEmailMutation = useMutation({
     mutationFn: ({ id, emailData }: { id: string; emailData: { to: string; subject: string; message: string } }) =>
       api.post(`/api/delivery-receipts/${id}/send-email/`, emailData),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['delivery-receipts'] });
       setShowEmailDialog(false);
       setEmailingReceipt(null);
-      toast.success('Email sent successfully');
+      const sentTo = data?.sent_to;
+      const redirected = data?.redirected;
+      const provider = data?.provider;
+      if (sentTo) {
+        toast.success(
+          redirected
+            ? `Email sent via ${provider || 'provider'} to test inbox: ${sentTo}`
+            : `Email sent to ${sentTo}`
+        );
+      } else {
+        toast.success('Email sent successfully');
+      }
     },
     onError: (error: any) => {
       toast.error(error?.message || 'Failed to send email');

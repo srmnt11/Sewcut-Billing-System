@@ -312,16 +312,31 @@ export function Billing() {
   const sendEmailMutation = useMutation({
     mutationFn: ({ id, emailData }: { id: string; emailData: { to: string; subject: string; message: string } }) =>
       api.post(`/api/billings/${id}/send-email/`, emailData),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['billings'] });
       setShowEmailDialog(false);
       setEmailingInvoice(null);
-      toast.success('Email sent successfully');
+      const sentTo = data?.sent_to;
+      const redirected = data?.redirected;
+      const provider = data?.provider;
+      if (sentTo) {
+        toast.success(
+          redirected
+            ? `Email sent via ${provider || 'provider'} to test inbox: ${sentTo}`
+            : `Email sent to ${sentTo}`
+        );
+      } else {
+        toast.success('Email sent successfully');
+      }
       addActivity({ type: 'email_sent', category: 'email', title: 'Invoice Email Sent', description: 'Invoice has been emailed to client' });
       addNotification({
         type: 'success',
         title: 'Email Sent',
-        message: 'Invoice has been sent to client',
+        message: sentTo
+          ? redirected
+            ? `Redirected to test inbox: ${sentTo}`
+            : `Invoice sent to ${sentTo}`
+          : 'Invoice has been sent to client',
         icon: 'file',
       });
     },
