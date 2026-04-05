@@ -6,7 +6,7 @@ services:
     region: singapore
     rootDir: sewcut-backend
     buildCommand: bash build.sh
-    startCommand: gunicorn sewcut.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: gunicorn sewcut.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120 --graceful-timeout 30
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.4
