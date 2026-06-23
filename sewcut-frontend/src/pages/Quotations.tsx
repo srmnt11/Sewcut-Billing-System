@@ -266,6 +266,7 @@ export function Quotations() {
       
       const invoice = await api.entities.Billing.create(invoiceData);
       await api.entities.Quotation.update(quotation.id, { 
+        ...quotation, 
         status: 'Accepted',
       });
       

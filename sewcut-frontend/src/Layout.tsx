@@ -87,8 +87,18 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
           {/* Logo */}
           <div className="px-6 py-6 border-b border-white/60">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 neu-press flex items-center justify-center">
-                <Scissors className="w-5 h-5 text-slate-700" />
+              <div className="w-10 h-10 neu-press flex items-center justify-center overflow-hidden">
+                <img
+                  src="/public/sewcut_logo.png"
+                  alt="Sewcut Logo"
+                  className="w-7 h-7 object-contain"
+                  onError={(e) => {
+                    // Fallback to scissors icon if logo not found
+                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.nextElementSibling?.removeAttribute('style');
+                  }}
+                />
+                <Scissors className="w-5 h-5 text-slate-700" style={{ display: 'none' }} />
               </div>
               <div>
                 <h1 className="font-bold text-slate-800 text-lg tracking-tight">Sewcut</h1>

@@ -8,6 +8,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from datetime import datetime
+from reportlab.platypus import Image as RLImage
 import os
 
 # ---------- font helpers ----------
@@ -16,6 +17,20 @@ _FONT_FAMILY = 'Helvetica'
 _FONT_BOLD = 'Helvetica-Bold'
 PESO = 'PHP '          # fallback when the peso glyph is unavailable
 
+def _get_logo_image(width=0.65*inch, height=0.65*inch):
+    """Return an RLImage of the Sewcut logo, or None if not found."""
+    # Put your logo file in your Django project's root or a known static path
+    candidates = [
+        os.path.join(os.path.dirname(__file__), 'sewcut_logo.png'),   # same folder as this .py file
+        os.path.join(os.path.dirname(__file__), '..', 'static', 'images', 'sewcut_logo.png'),
+        os.path.join(os.path.dirname(__file__), '..', 'media', 'sewcut_logo.png'),
+    ]
+    for path in candidates:
+        if os.path.exists(os.path.abspath(path)):
+            img = RLImage(os.path.abspath(path), width=width, height=height)
+            img.hAlign = 'LEFT'
+            return img
+    return None
 
 def _register_font():
     """Register a TrueType font that includes the peso sign glyph."""
@@ -90,13 +105,50 @@ def generate_invoice_pdf(billing):
     st_footer    = _s('FT', 8, TEXT_MUTED, align=TA_CENTER, sa=2)
     st_sub       = _s('SUB', 10, TEXT_MUTED, sa=16)
 
-    # ==== HEADER ====
-    ht = Table([
-        [Paragraph('<b>SEWCUT</b>', _s('H1', 20, BRAND_DARK, True, sa=0)),
-         Paragraph('INVOICE', _s('H2', 20, BRAND_AMBER, True, TA_RIGHT, 0))],
-        [Paragraph('Wearing Apparel Manufacturing', st_sub), ''],
-    ], colWidths=[W * 0.5, W * 0.5])
-    ht.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+        # ==== HEADER with logo ====
+    logo = _get_logo_image(width=0.65*inch, height=0.65*inch)
+
+    company_info_col = Table([
+        [Paragraph('<b>SEW-CUT WEARING APPAREL MANUFACTURING</b>',
+                _s('H1', 12, BRAND_DARK, True, sa=2))],
+        [Paragraph('# 13 Delaware St. Phase 2, Greenland Newtown Subd., Brgy. Banaba, San Mateo, Rizal 1850',
+                _s('H1a', 8, TEXT_MUTED, sa=1))],
+        [Paragraph('Mobile: 0927-9183718 / 0917-1171998',
+                _s('H1b', 8, TEXT_MUTED, sa=1))],
+        [Paragraph('E-mail: sewcut.garmentsmanufacturing@gmail.com',
+                _s('H1c', 8, TEXT_MUTED, sa=1))],
+    ], colWidths=[W * 0.6])
+    company_info_col.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+
+    # ---- right side: doc type label ----
+    doc_type_label = 'INVOICE'   # 👈 change to 'QUOTATION' or 'DELIVERY RECEIPT' per file
+
+    right_col = Table([
+        [Paragraph(doc_type_label,
+                _s('H2', 20, BRAND_AMBER, True, TA_RIGHT, sa=0))],
+    ], colWidths=[W * 0.3])
+    right_col.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
+
+    # ---- assemble: [logo | company info | doc type] ----
+    if logo:
+        logo_col = Table([[logo]], colWidths=[W * 0.1])
+        logo_col.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
+        ht = Table(
+            [[logo_col, company_info_col, right_col]],
+            colWidths=[W * 0.1, W * 0.6, W * 0.3]
+        )
+    else:
+        # Fallback: no logo, keep text brand name
+        ht = Table(
+            [[company_info_col, right_col]],
+            colWidths=[W * 0.7, W * 0.3]
+        )
+
+    ht.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (0, -1), 0),
+        ('RIGHTPADDING', (-1, 0), (-1, -1), 0),
+    ]))
     elements.append(ht)
     elements.append(Spacer(1, 0.1 * inch))
     elements.append(HRFlowable(width='100%', thickness=2, color=BRAND_AMBER, spaceAfter=16))

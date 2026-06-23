@@ -8,6 +8,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from datetime import datetime
+from reportlab.platypus import Image as RLImage
 import os
 
 # ---------- font helpers ----------
@@ -16,6 +17,20 @@ _FONT_FAMILY = 'Helvetica'
 _FONT_BOLD = 'Helvetica-Bold'
 PESO = 'PHP '
 
+def _get_logo_image(width=0.65*inch, height=0.65*inch):
+    """Return an RLImage of the Sewcut logo, or None if not found."""
+    # Put your logo file in your Django project's root or a known static path
+    candidates = [
+        os.path.join(os.path.dirname(__file__), 'sewcut_logo.png'),   # same folder as this .py file
+        os.path.join(os.path.dirname(__file__), '..', 'static', 'images', 'sewcut_logo.png'),
+        os.path.join(os.path.dirname(__file__), '..', 'media', 'sewcut_logo.png'),
+    ]
+    for path in candidates:
+        if os.path.exists(os.path.abspath(path)):
+            img = RLImage(os.path.abspath(path), width=width, height=height)
+            img.hAlign = 'LEFT'
+            return img
+    return None
 
 def _register_font():
     global _FONT_REGISTERED, _FONT_FAMILY, _FONT_BOLD, PESO
@@ -96,12 +111,44 @@ def generate_quotation_pdf(quotation):
         q_date_str = quotation.quotation_date.strftime('%B %d, %Y') if quotation.quotation_date else datetime.now().strftime('%B %d, %Y')
 
         # Letter header
-        lh = Table([
-            [Paragraph('<b>SEW-CUT</b>', _s('LH1', 18, BRAND_DARK, True, sa=0)),
-             Paragraph(q_date_str, _s('LH2', 10, TEXT_NORMAL, align=TA_RIGHT, sa=0))],
-            [Paragraph('Wearing Apparel Manufacturing', _s('LH3', 9, TEXT_MUTED, sa=0)), ''],
-        ], colWidths=[W * 0.6, W * 0.4])
-        lh.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+# Letter header with logo
+        cover_logo = _get_logo_image(width=0.55*inch, height=0.55*inch)
+
+        cover_company_col = Table([
+            [Paragraph('<b>SEW-CUT WEARING APPAREL MANUFACTURING</b>',
+                       _s('LH1', 11, BRAND_DARK, True, sa=2))],
+            [Paragraph('# 13 Delaware St. Phase 2, Greenland Newtown Subd., Brgy. Banaba, San Mateo, Rizal 1850',
+                       _s('LH1a', 8, TEXT_MUTED, sa=1))],
+            [Paragraph('Mobile: 0927-9183718 / 0917-1171998',
+                       _s('LH1b', 8, TEXT_MUTED, sa=1))],
+            [Paragraph('E-mail: sewcut.garmentsmanufacturing@gmail.com',
+                       _s('LH1c', 8, TEXT_MUTED, sa=1))],
+        ], colWidths=[W * 0.55])
+        cover_company_col.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+
+        cover_date_col = Table([
+            [Paragraph(q_date_str, _s('LH2', 10, TEXT_NORMAL, align=TA_RIGHT, sa=0))],
+        ], colWidths=[W * 0.35])
+        cover_date_col.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+
+        if cover_logo:
+            cover_logo_col = Table([[cover_logo]], colWidths=[W * 0.1])
+            cover_logo_col.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
+            lh = Table(
+                [[cover_logo_col, cover_company_col, cover_date_col]],
+                colWidths=[W * 0.1, W * 0.55, W * 0.35]
+            )
+        else:
+            lh = Table(
+                [[cover_company_col, cover_date_col]],
+                colWidths=[W * 0.65, W * 0.35]
+            )
+
+        lh.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('LEFTPADDING', (0, 0), (0, -1), 0),
+            ('RIGHTPADDING', (-1, 0), (-1, -1), 0),
+        ]))
         elements.append(lh)
         elements.append(Spacer(1, 0.08 * inch))
         elements.append(HRFlowable(width='100%', thickness=2, color=BRAND_AMBER, spaceAfter=20))
@@ -152,13 +199,50 @@ def generate_quotation_pdf(quotation):
         # Page break before pricing page
         elements.append(PageBreak())
 
-    # ==== HEADER ====
-    ht = Table([
-        [Paragraph('<b>SEWCUT</b>', _s('H1', 20, BRAND_DARK, True, sa=0)),
-         Paragraph('QUOTATION', _s('H2', 20, BRAND_AMBER, True, TA_RIGHT, 0))],
-        [Paragraph('Wearing Apparel Manufacturing', st_sub), ''],
-    ], colWidths=[W * 0.5, W * 0.5])
-    ht.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+    # ==== HEADER with logo ====
+    logo = _get_logo_image(width=0.65*inch, height=0.65*inch)
+
+    company_info_col = Table([
+        [Paragraph('<b>SEW-CUT WEARING APPAREL MANUFACTURING</b>',
+                _s('H1', 12, BRAND_DARK, True, sa=2))],
+        [Paragraph('# 13 Delaware St. Phase 2, Greenland Newtown Subd., Brgy. Banaba, San Mateo, Rizal 1850',
+                _s('H1a', 8, TEXT_MUTED, sa=1))],
+        [Paragraph('Mobile: 0927-9183718 / 0917-1171998',
+                _s('H1b', 8, TEXT_MUTED, sa=1))],
+        [Paragraph('E-mail: sewcut.garmentsmanufacturing@gmail.com',
+                _s('H1c', 8, TEXT_MUTED, sa=1))],
+    ], colWidths=[W * 0.6])
+    company_info_col.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP')]))
+
+    # ---- right side: doc type label ----
+    doc_type_label = 'QUOTATION'   # 👈 change to 'QUOTATION' or 'DELIVERY RECEIPT' per file
+
+    right_col = Table([
+        [Paragraph(doc_type_label,
+                _s('H2', 20, BRAND_AMBER, True, TA_RIGHT, sa=0))],
+    ], colWidths=[W * 0.3])
+    right_col.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
+
+    # ---- assemble: [logo | company info | doc type] ----
+    if logo:
+        logo_col = Table([[logo]], colWidths=[W * 0.1])
+        logo_col.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'MIDDLE')]))
+        ht = Table(
+            [[logo_col, company_info_col, right_col]],
+            colWidths=[W * 0.1, W * 0.6, W * 0.3]
+        )
+    else:
+        # Fallback: no logo, keep text brand name
+        ht = Table(
+            [[company_info_col, right_col]],
+            colWidths=[W * 0.7, W * 0.3]
+        )
+
+    ht.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('LEFTPADDING', (0, 0), (0, -1), 0),
+        ('RIGHTPADDING', (-1, 0), (-1, -1), 0),
+    ]))
     elements.append(ht)
     elements.append(Spacer(1, 0.1 * inch))
     elements.append(HRFlowable(width='100%', thickness=2, color=BRAND_AMBER, spaceAfter=16))
