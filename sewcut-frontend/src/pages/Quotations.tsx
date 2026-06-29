@@ -371,7 +371,7 @@ export function Quotations() {
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
       
-      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
     } catch (error) {
       console.error('Error previewing PDF:', error);
       toast.error('Failed to preview PDF');

@@ -453,7 +453,7 @@ export function DeliveryReceipts() {
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
-      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
     } catch (error) {
       console.error('Error previewing delivery receipt PDF:', error);
       toast.error('Failed to preview delivery receipt PDF');

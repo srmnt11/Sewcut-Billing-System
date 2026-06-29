@@ -104,6 +104,7 @@ def generate_invoice_pdf(billing):
     st_section   = _s('SEC', 11, BRAND_DARK, True, sa=8)
     st_footer    = _s('FT', 8, TEXT_MUTED, align=TA_CENTER, sa=2)
     st_sub       = _s('SUB', 10, TEXT_MUTED, sa=16)
+    st_th_right = _s('THR', 9, colors.white, True, align=TA_RIGHT)
 
         # ==== HEADER with logo ====
     logo = _get_logo_image(width=0.65*inch, height=0.65*inch)
@@ -162,7 +163,6 @@ def generate_invoice_pdf(billing):
         [Paragraph(f'<b>Number:</b>  {billing.billing_number}', st_value)],
         [Paragraph(f'<b>Date:</b>  {inv_date}', st_value)],
         [Paragraph(f'<b>Due:</b>  {due_date}', st_value)],
-        [Paragraph(f'<b>Status:</b>  {billing.status}', st_value)],
     ], colWidths=[W * 0.45])
     right = Table([
         [Paragraph('BILL TO', st_label)],
@@ -179,11 +179,13 @@ def generate_invoice_pdf(billing):
     # ==== LINE ITEMS ====
     cw = [W * 0.44, W * 0.12, W * 0.22, W * 0.22]
     rows = [[Paragraph('DESCRIPTION', st_th), Paragraph('QTY', st_th),
-             Paragraph('UNIT PRICE', st_th), Paragraph('TOTAL', st_th)]]
+             Paragraph('UNIT PRICE', st_th_right), Paragraph('TOTAL', st_th_right)]]
     for item in billing.items.all():
+        qty_val = float(item.quantity)
+        qty_str = str(int(qty_val)) if qty_val == int(qty_val) else f'{qty_val:g}'
         rows.append([
             Paragraph(str(item.description), st_td),
-            Paragraph(str(item.quantity), st_td),
+            Paragraph(qty_str, st_td),
             Paragraph(f'{PESO}{float(item.unit_price):,.2f}', st_tdr),
             Paragraph(f'{PESO}{float(item.total):,.2f}', st_tdr),
         ])
@@ -274,7 +276,7 @@ def generate_invoice_pdf(billing):
     elements.append(Spacer(1, 0.3 * inch))
     elements.append(HRFlowable(width='100%', thickness=0.5, color=BORDER_CLR, spaceBefore=4, spaceAfter=12))
     elements.append(Paragraph('Thank you for your business!', st_footer))
-    elements.append(Paragraph('Sewcut Wearing Apparel Manufacturing', st_footer))
+    elements.append(Paragraph('Sew-cut Wearing Apparel Manufacturing', st_footer))
 
     doc.build(elements)
     buffer.seek(0)

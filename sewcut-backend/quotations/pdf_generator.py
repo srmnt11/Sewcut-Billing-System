@@ -101,8 +101,10 @@ def generate_quotation_pdf(quotation):
     st_grand_v   = _s('GV', 13, BRAND_DARK, True, TA_RIGHT)
     st_section   = _s('SEC', 11, BRAND_DARK, True, sa=8)
     st_footer    = _s('FT', 8, TEXT_MUTED, align=TA_CENTER, sa=2)
+    st_footer_red = _s('FTR', 8, colors.HexColor('#dc2626'), align=TA_CENTER, sa=2)
     st_sub       = _s('SUB', 10, TEXT_MUTED, sa=16)
     st_terms     = _s('TRM', 9, TEXT_NORMAL, sa=4)
+    st_th_right = _s('THR', 9, colors.white, True, align=TA_RIGHT)
 
     # ==== COVER LETTER PAGE (if letter fields are filled) ====
     has_cover = bool(getattr(quotation, 'cover_letter_recipient', '') or
@@ -187,10 +189,10 @@ def generate_quotation_pdf(quotation):
                 'Should you have any questions or require further information, please do not hesitate to contact us.',
                 _s('LB', 10, TEXT_NORMAL, sa=8)))
 
-        elements.append(Spacer(1, 0.3 * inch))
+        elements.append(Spacer(1, 0.1 * inch))
 
         # Sign-off
-        elements.append(Paragraph('Thank you for your time and consideration.', _s('SO1', 10, TEXT_NORMAL, sa=16)))
+        elements.append(Paragraph('Thank you for your time and consideration.', _s('SO1', 10, TEXT_NORMAL, sa=20)))
         elements.append(Paragraph('Sincerely,', _s('SO2', 10, TEXT_NORMAL, sa=24)))
         elements.append(Paragraph('<b>Josallyn J. Sarmiento</b>', _s('SIG1', 11, BRAND_DARK, True, sa=2)))
         elements.append(Paragraph('Operations Manager', _s('SIG2', 10, TEXT_MUTED, sa=2)))
@@ -256,7 +258,6 @@ def generate_quotation_pdf(quotation):
         [Paragraph(f'<b>Number:</b>  {quotation.quotation_number}', st_value)],
         [Paragraph(f'<b>Date:</b>  {q_date}', st_value)],
         [Paragraph(f'<b>Valid Until:</b>  {valid_until}', st_value)],
-        [Paragraph(f'<b>Status:</b>  {quotation.status}', st_value)],
     ], colWidths=[W * 0.45])
     right = Table([
         [Paragraph('QUOTE TO', st_label)],
@@ -270,11 +271,13 @@ def generate_quotation_pdf(quotation):
     # ==== LINE ITEMS ====
     cw = [W * 0.44, W * 0.12, W * 0.22, W * 0.22]
     rows = [[Paragraph('DESCRIPTION', st_th), Paragraph('QTY', st_th),
-             Paragraph('UNIT PRICE', st_th), Paragraph('TOTAL', st_th)]]
+             Paragraph('UNIT PRICE', st_th_right), Paragraph('TOTAL', st_th_right)]]
     for item in quotation.items.all():
+        qty_val = float(item.quantity)
+        qty_str = str(int(qty_val)) if qty_val == int(qty_val) else f'{qty_val:g}'
         rows.append([
             Paragraph(str(item.description), st_td),
-            Paragraph(str(item.quantity), st_td),
+            Paragraph(qty_str, st_td),
             Paragraph(f'{PESO}{float(item.unit_price):,.2f}', st_tdr),
             Paragraph(f'{PESO}{float(item.total):,.2f}', st_tdr),
         ])
@@ -332,7 +335,7 @@ def generate_quotation_pdf(quotation):
     elements.append(Paragraph('<b>*Deposit all payments to:</b>', _s('DEP', 9, TEXT_NORMAL, sa=4)))
     deposit = Table([
         [Paragraph('<font color="#dc2626"><b>BDO Account Name:</b></font>', _s('BN', 9, TEXT_NORMAL, sa=2)),
-         Paragraph('<b>SEWCUT WEARING APPAREL MANUFACTURING</b>', _s('BV', 9, TEXT_NORMAL, sa=2))],
+         Paragraph('<b>SEW-CUT WEARING APPAREL MANUFACTURING</b>', _s('BV', 9, TEXT_NORMAL, sa=2))],
         [Paragraph('<b>Account Number:</b>', _s('AN', 9, TEXT_NORMAL, sa=2)),
          Paragraph('012258002502', _s('AV', 9, TEXT_NORMAL, sa=2))],
     ], colWidths=[W * 0.28, W * 0.72])
@@ -342,8 +345,8 @@ def generate_quotation_pdf(quotation):
     # ==== FOOTER ====
     elements.append(Spacer(1, 0.3 * inch))
     elements.append(HRFlowable(width='100%', thickness=0.5, color=BORDER_CLR, spaceBefore=4, spaceAfter=12))
-    elements.append(Paragraph(f'This quotation is valid until {valid_until}.', st_footer))
-    elements.append(Paragraph('Sewcut Wearing Apparel Manufacturing', st_footer))
+    elements.append(Paragraph(f'This quotation is valid until {valid_until}.', st_footer_red))
+    elements.append(Paragraph('Sew-cut Wearing Apparel Manufacturing', st_footer))
 
     doc.build(elements)
     buffer.seek(0)

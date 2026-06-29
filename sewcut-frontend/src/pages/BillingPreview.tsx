@@ -134,7 +134,7 @@ export function BillingPreview() {
         body: JSON.stringify({
           to: data.companyEmail,
           subject: `Invoice ${data.billingNumber}`,
-          message: `Dear ${data.companyName},\n\nPlease find attached invoice ${data.billingNumber}.\n\nTotal Amount: ₱${data.grandTotal?.toLocaleString()}\n\nThank you for your business.\n\nBest regards,\n${companyInfo.company_name || 'Sewcut Wearing Apparel Manufacturing'}`
+          message: `Dear ${data.companyName},\n\nPlease find the attached invoice ${data.billingNumber}.\n\nTotal Amount: ₱${data.grandTotal?.toLocaleString()}\n\nThank you for your business.\n\nBest regards,\n${companyInfo.company_name || 'Sewcut Wearing Apparel Manufacturing'}`
         })
       });
       

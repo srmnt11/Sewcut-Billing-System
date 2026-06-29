@@ -68,6 +68,7 @@ def generate_delivery_receipt_pdf(receipt):
     st_section = _s('SEC', 11, BRAND_DARK, True, sa=8)
     st_footer = _s('FT', 8, TEXT_MUTED, align=TA_CENTER, sa=2)
     st_sub = _s('SUB', 10, TEXT_MUTED, sa=16)
+    st_th_right = _s('THR', 9, colors.white, True, align=TA_RIGHT)
 
     # ==== HEADER with logo ====
     logo = _get_logo_image(width=0.65*inch, height=0.65*inch)
@@ -123,7 +124,6 @@ def generate_delivery_receipt_pdf(receipt):
         [Paragraph('DELIVERY DETAILS', st_label)],
         [Paragraph(f'<b>Receipt No:</b>  {receipt.receipt_number}', st_value)],
         [Paragraph(f'<b>Date:</b>  {delivery_date}', st_value)],
-        [Paragraph(f'<b>Status:</b>  {receipt.status}', st_value)],
         [Paragraph(f'<b>Reference:</b>  {receipt.reference_number or "-"}', st_value)],
     ], colWidths=[W * 0.45])
 
@@ -140,16 +140,18 @@ def generate_delivery_receipt_pdf(receipt):
     elements.append(Spacer(1, 0.35 * inch))
 
     rows = [[
-        Paragraph('DESCRIPTION', st_th),
-        Paragraph('QTY', st_th),
-        Paragraph('UNIT', st_th),
-        Paragraph('REMARKS', st_th),
+    Paragraph('DESCRIPTION', st_th),
+    Paragraph('QTY', st_th_right),
+    Paragraph('UNIT', st_th),
+    Paragraph('REMARKS', st_th),
     ]]
 
     for item in receipt.items.all():
+        qty_val = float(item.quantity)
+        qty_str = str(int(qty_val)) if qty_val == int(qty_val) else f'{qty_val:g}'
         rows.append([
             Paragraph(str(item.description), st_td),
-            Paragraph(str(item.quantity), st_tdr),
+            Paragraph(qty_str, st_tdr),
             Paragraph(str(item.unit or '-'), st_td),
             Paragraph(str(item.remarks or '-'), st_td),
         ])
@@ -182,7 +184,7 @@ def generate_delivery_receipt_pdf(receipt):
     elements.append(Spacer(1, 0.35 * inch))
     elements.append(HRFlowable(width='100%', thickness=0.5, color=BORDER_CLR, spaceBefore=4, spaceAfter=14))
     elements.append(Paragraph('Received in good order and condition.', st_footer))
-    elements.append(Paragraph('Sewcut Wearing Apparel Manufacturing', st_footer))
+    elements.append(Paragraph('Sew-cut Wearing Apparel Manufacturing', st_footer))
 
     doc.build(elements)
     buffer.seek(0)

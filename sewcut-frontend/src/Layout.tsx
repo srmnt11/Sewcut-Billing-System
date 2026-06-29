@@ -89,7 +89,7 @@ export default function Layout({ children, currentPageName }: LayoutProps) {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 neu-press flex items-center justify-center overflow-hidden">
                 <img
-                  src="/public/sewcut_logo.png"
+                  src="/sewcut_logo.png"
                   alt="Sewcut Logo"
                   className="w-7 h-7 object-contain"
                   onError={(e) => {

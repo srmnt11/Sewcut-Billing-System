@@ -12,18 +12,13 @@ import {
   CheckCircle, 
   MoreHorizontal,
   Search,
-  Filter,
   Repeat,
   DollarSign,
   Trash2,
-  Zap,
   Clock,
   Send,
   Truck,
-  CheckCircle2,
-  ArrowRight
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+  CheckCircle2} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -43,13 +38,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import InvoiceForm from '@/components/billing/InvoiceForm';
@@ -302,12 +290,25 @@ export function Billing() {
       window.open(url, '_blank');
       
       // Clean up the object URL after a delay
-      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
     } catch (error) {
       console.error('Error previewing PDF:', error);
       toast.error('Failed to preview PDF');
     }
   };
+
+  const scheduleEmailMutation = useMutation({
+  mutationFn: ({ id, emailData }: { id: string; emailData: any }) =>
+    api.post(`/api/billings/${id}/schedule-email/`, emailData),
+  onSuccess: (data: any) => {
+    setShowEmailDialog(false);
+    setEmailingInvoice(null);
+    toast.success(`Email scheduled for ${new Date(data.scheduled_at).toLocaleString()}`);
+  },
+  onError: (error: any) => {
+    toast.error(error.message || 'Failed to schedule email');
+  }
+});
 
   const sendEmailMutation = useMutation({
     mutationFn: ({ id, emailData }: { id: string; emailData: { to: string; subject: string; message: string } }) =>
@@ -727,8 +728,13 @@ export function Billing() {
           setEmailingInvoice(null);
         }}
         onSend={handleEmailSend}
-        billing={emailingInvoice}
-        isLoading={sendEmailMutation.isPending}
+        billing={emailingInvoice}  
+        onSchedule={(emailData) => {
+              if (emailingInvoice) {
+                scheduleEmailMutation.mutate({ id: emailingInvoice.id, emailData });
+              }
+            }}
+        isLoading={sendEmailMutation.isPending || scheduleEmailMutation.isPending}   
       />
 
       {/* Payment Tracking Dialog */}
