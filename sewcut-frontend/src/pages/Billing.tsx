@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { useNotificationContext, NotificationHelpers } from '@/context/NotificationContext';
@@ -252,13 +252,24 @@ export function Billing() {
     }
   };
 
-  const handleMarkAsPaid = (invoice: { id: any; status: string; }) => {
-    // Workflow: Pending → Sent → Partial Payment → Delivered → Paid
+  // --- STEP 7.1: Replace handleMarkAsPaid with paymentType-aware version ---
+  const handleMarkAsPaid = (invoice: { id: any; status: string; paymentType?: string }) => {
+    const paymentType = invoice.paymentType || 'downpayment'; // Default to downpayment if not set
+    
     let newStatus = invoice.status;
-    if (invoice.status === 'Pending') newStatus = 'Sent';
-    else if (invoice.status === 'Sent') newStatus = 'Partial Payment';
-    else if (invoice.status === 'Partial Payment') newStatus = 'Delivered';
-    else if (invoice.status === 'Delivered') newStatus = 'Paid';
+    
+    if (paymentType === 'downpayment') {
+      // Existing 4-step flow for downpayment
+      if (invoice.status === 'Pending') newStatus = 'Sent';
+      else if (invoice.status === 'Sent') newStatus = 'Partial Payment';
+      else if (invoice.status === 'Partial Payment') newStatus = 'Delivered';
+      else if (invoice.status === 'Delivered') newStatus = 'Paid';
+    } else {
+      // Full payment flow: Pending → Sent → Paid → Delivered
+      if (invoice.status === 'Pending') newStatus = 'Sent';
+      else if (invoice.status === 'Sent') newStatus = 'Paid';
+      else if (invoice.status === 'Paid') newStatus = 'Delivered';
+    }
     
     updateMutation.mutate({ 
       id: invoice.id, 
@@ -431,6 +442,41 @@ export function Billing() {
     setAdvancedFilters({});
   };
 
+  // --- STEP 8: Compute payment type info for bulk actions ---
+  const selectedInvoiceObjects = useMemo(() => {
+    return invoices.filter((inv: any) => selectedInvoices.includes(inv.id));
+  }, [invoices, selectedInvoices]);
+
+  const selectedPaymentTypes = useMemo(() => {
+    const types = new Set<string>();
+    selectedInvoiceObjects.forEach((inv: any) => {
+      types.add(inv.paymentType || 'downpayment');
+    });
+    return Array.from(types);
+  }, [selectedInvoiceObjects]);
+
+  const hasMixedPaymentTypes = selectedPaymentTypes.length > 1;
+
+  const getAvailableStatusesForSelection = () => {
+    if (hasMixedPaymentTypes) {
+      // If mixed, return empty array to hide/disable the status change
+      return [];
+    }
+    
+    // Single payment type - return appropriate statuses
+    const paymentType = selectedPaymentTypes[0] || 'downpayment';
+    
+    if (paymentType === 'downpayment') {
+      return ['Pending', 'Sent', 'Partial Payment', 'Delivered', 'Paid', 'Cancelled'];
+    } else {
+      // Full payment
+      return ['Pending', 'Sent', 'Paid', 'Delivered', 'Cancelled'];
+    }
+  };
+
+  const availableBulkStatuses = getAvailableStatusesForSelection();
+
+  // --- STEP 7.2: Update getActionButton in columns ---
   const columns = [
     {
       header: (
@@ -485,33 +531,66 @@ export function Billing() {
       header: 'Actions',
       cell: (row: any) => {
         const getActionButton = () => {
-          switch (row.status) {
-            case 'Pending':
-              return (
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSendEmail(row); }}>
-                  <Mail className="w-4 h-4 mr-2" /> Send to Client
-                </DropdownMenuItem>
-              );
-            case 'Sent':
-              return (
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
-                  <CheckCircle className="w-4 h-4 mr-2" /> Mark 50% Received
-                </DropdownMenuItem>
-              );
-            case 'Partial Payment':
-              return (
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
-                  <CheckCircle className="w-4 h-4 mr-2" /> Mark as Delivered
-                </DropdownMenuItem>
-              );
-            case 'Delivered':
-              return (
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
-                  <CheckCircle className="w-4 h-4 mr-2" /> Mark Final 50% Paid
-                </DropdownMenuItem>
-              );
-            default:
-              return null;
+          const paymentType = row.paymentType || 'downpayment';
+          
+          if (paymentType === 'downpayment') {
+            // Existing 4-step flow for downpayment
+            switch (row.status) {
+              case 'Pending':
+                return (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSendEmail(row); }}>
+                    <Mail className="w-4 h-4 mr-2" /> Send to Client
+                  </DropdownMenuItem>
+                );
+              case 'Sent':
+                return (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
+                    <CheckCircle className="w-4 h-4 mr-2" /> Mark 50% Received
+                  </DropdownMenuItem>
+                );
+              case 'Partial Payment':
+                return (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
+                    <CheckCircle className="w-4 h-4 mr-2" /> Mark as Delivered
+                  </DropdownMenuItem>
+                );
+              case 'Delivered':
+                return (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
+                    <CheckCircle className="w-4 h-4 mr-2" /> Mark Final 50% Paid
+                  </DropdownMenuItem>
+                );
+              case 'Paid':
+                return null; // Natural end of downpayment flow
+              default:
+                return null;
+            }
+          } else {
+            // Full payment flow: Pending → Sent → Paid → Delivered
+            switch (row.status) {
+              case 'Pending':
+                return (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleSendEmail(row); }}>
+                    <Mail className="w-4 h-4 mr-2" /> Send to Client
+                  </DropdownMenuItem>
+                );
+              case 'Sent':
+                return (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
+                    <CheckCircle className="w-4 h-4 mr-2" /> Mark as Paid
+                  </DropdownMenuItem>
+                );
+              case 'Paid':
+                return (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
+                    <CheckCircle className="w-4 h-4 mr-2" /> Mark as Delivered
+                  </DropdownMenuItem>
+                );
+              case 'Delivered':
+                return null; // Natural end of full payment flow
+              default:
+                return null;
+            }
           }
         };
 
@@ -537,7 +616,7 @@ export function Billing() {
                 <Repeat className="w-4 h-4 mr-2" /> Set Recurring
               </DropdownMenuItem>
               {getActionButton()}
-              {row.status !== 'Paid' && row.status !== 'Cancelled' && (
+              {row.status !== 'Paid' && row.status !== 'Cancelled' && row.status !== 'Delivered' && (
                 <DropdownMenuItem 
                   onClick={(e) => { e.stopPropagation(); setDeleteInvoice(row); }}
                   className="text-red-600"
@@ -620,14 +699,14 @@ export function Billing() {
         </div>
       </div>
 
-      {/* Bulk Actions */}
+      {/* --- STEP 8: Bulk Actions with paymentType awareness --- */}
       {selectedInvoices.length > 0 && (
         <BulkActions
           selectedCount={selectedInvoices.length}
           onExport={handleBulkExport}
           onImport={() => toast.info('Import feature coming soon')}
           onBulkDelete={handleBulkDelete}
-          onBulkStatusChange={(status) => {
+          onBulkStatusChange={hasMixedPaymentTypes ? undefined : (status) => {
             selectedInvoices.forEach(id => {
               const invoice = invoices.find((i: any) => i.id === id);
               if (invoice) {
@@ -637,7 +716,7 @@ export function Billing() {
             setSelectedInvoices([]);
           }}
           entityType="invoices"
-          availableStatuses={['Pending', 'Sent', 'Partial Payment', 'Delivered', 'Paid', 'Cancelled']}
+          availableStatuses={availableBulkStatuses}
         />
       )}
 

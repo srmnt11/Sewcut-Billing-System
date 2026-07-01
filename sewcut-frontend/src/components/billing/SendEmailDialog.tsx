@@ -174,7 +174,7 @@ export default function SendEmailDialog({
               value={emailData.message}
               onChange={(e) => setEmailData(prev => ({ ...prev, message: e.target.value }))}
               placeholder="Email message body"
-              className="mt-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none"
+              className="mt-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
               rows={7}
             />
           </div>

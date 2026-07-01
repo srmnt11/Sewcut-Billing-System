@@ -17,6 +17,7 @@ import {
   Plus,
   ClipboardCheck,
   CheckSquare,
+  X,
 } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { useNotificationContext } from '@/context/NotificationContext';
@@ -1005,9 +1006,13 @@ export function DeliveryReceipts() {
           </DialogHeader>
 
           <div className="space-y-6 mt-4">
+            {/* Auto-fill Section */}
             {!editingReceipt && (
-              <div>
-                <Label>Auto-fill From Invoice</Label>
+              <div className="space-y-4 p-4 neu-inset rounded-xl">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <FileText className="w-4 h-4 text-blue-500" />
+                  Auto-fill From Invoice
+                </div>
                 <Select value={selectedInvoiceSourceId} onValueChange={handleAutofillFromInvoice}>
                   <SelectTrigger className="mt-1 neu-inset border-0 shadow-none" disabled={isAutofillingInvoice}>
                     <SelectValue placeholder={isAutofillingInvoice ? 'Applying invoice...' : 'Select invoice to auto-fill (optional)'} />
@@ -1028,109 +1033,154 @@ export function DeliveryReceipts() {
                 </Select>
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label>Receipt Number</Label>
-                <Input
-                  value={formData.receiptNumber}
-                  className="mt-1 bg-slate-50 text-slate-500 cursor-not-allowed"
-                  onChange={(e) => setFormData((prev) => ({ ...prev, receiptNumber: e.target.value }))}
-                  placeholder="DR-0001"
-                />
+
+            {/* Receipt Info */}
+            <div className="space-y-4 p-4 neu-inset rounded-xl">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <ClipboardCheck className="w-4 h-4 text-emerald-500" />
+                Receipt Information
               </div>
-              <div>
-                <Label>Delivery Date</Label>
-                <Input
-                  type="date"
-                  value={formData.deliveryDate}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, deliveryDate: e.target.value }))}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Receipt Number</Label>
+                  <Input
+                    value={formData.receiptNumber}
+                    className="mt-1 bg-slate-50 text-slate-500 cursor-not-allowed"
+                    onChange={(e) => setFormData((prev) => ({ ...prev, receiptNumber: e.target.value }))}
+                    placeholder="DR-0001"
+                  />
+                </div>
+                <div>
+                  <Label>Delivery Date</Label>
+                  <Input
+                    type="date"
+                    value={formData.deliveryDate}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, deliveryDate: e.target.value }))}
+                    className="mt-1"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Client Name</Label>
-                <Input
-                  value={formData.clientName}
-                  onChange={(e) => handleClientNameChange(e.target.value)}
-                  placeholder="Client / Company"
-                  list="delivery-receipt-client-list"
-                />
-                <datalist id="delivery-receipt-client-list">
-                  {clients.map((client: any) => (
-                    <option key={client.id} value={client.name || ''} />
-                  ))}
-                </datalist>
+            {/* Client Information */}
+            <div className="space-y-4 p-4 neu-inset rounded-xl">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <Truck className="w-4 h-4 text-blue-500" />
+                Client Information
               </div>
-              <div>
-                <Label>Reference Number</Label>
-                <Input
-                  value={formData.referenceNumber}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, referenceNumber: e.target.value }))}
-                  placeholder="PO / SO reference"
-                />
-              </div>
-              <div>
-                <Label>Contact Person</Label>
-                <Input
-                  value={formData.contactPerson}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, contactPerson: e.target.value }))}
-                  placeholder="Receiver"
-                />
-              </div>
-              <div>
-                <Label>Address</Label>
-                <Input
-                  value={formData.address}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
-                  placeholder="Delivery address"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Client Name *</Label>
+                  <Input
+                    value={formData.clientName}
+                    onChange={(e) => handleClientNameChange(e.target.value)}
+                    placeholder="Client / Company"
+                    list="delivery-receipt-client-list"
+                    className="mt-1"
+                  />
+                  <datalist id="delivery-receipt-client-list">
+                    {clients.map((client: any) => (
+                      <option key={client.id} value={client.name || ''} />
+                    ))}
+                  </datalist>
+                </div>
+                <div>
+                  <Label>Reference Number</Label>
+                  <Input
+                    value={formData.referenceNumber}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, referenceNumber: e.target.value }))}
+                    placeholder="PO / SO reference"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Contact Person</Label>
+                  <Input
+                    value={formData.contactPerson}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, contactPerson: e.target.value }))}
+                    placeholder="Receiver"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label>Delivery Address</Label>
+                  <Input
+                    value={formData.address}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+                    placeholder="Delivery address"
+                    className="mt-1"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Items</Label>
-                <Button type="button" variant="outline" onClick={addItem}>
-                  <Plus className="w-4 h-4 mr-2" /> Add Item
+            {/* Line Items */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-slate-500" />
+                  <Label className="text-base font-semibold">Items</Label>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                  <Plus className="w-4 h-4 mr-1" /> Add Item
                 </Button>
               </div>
               <div className="space-y-3">
+                {/* Column Headers */}
+                <div className="flex gap-2 items-center px-4">
+                  <div className="flex-1">
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Description</span>
+                  </div>
+                  <div className="w-20">
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Qty</span>
+                  </div>
+                  <div className="w-24">
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Unit</span>
+                  </div>
+                  <div className="w-28">
+                    <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Remarks</span>
+                  </div>
+                  <div className="w-9" />
+                </div>
                 {formData.items.map((item, index) => (
-                  <div key={`${item.id || 'item'}-${index}`} className="grid grid-cols-12 gap-2">
-                    <Input
-                      className="col-span-5"
-                      value={item.description}
-                      onChange={(e) => updateItem(index, 'description', e.target.value)}
-                      placeholder="Description"
-                    />
-                    <Input
-                      className="col-span-2"
-                      type="number"
-                      min={1}
-                      value={item.quantity}
-                      onChange={(e) => updateItem(index, 'quantity', Math.max(1, Number(e.target.value) || 1))}
-                      placeholder="Qty"
-                    />
-                    <Input
-                      className="col-span-2"
-                      value={item.unit}
-                      onChange={(e) => updateItem(index, 'unit', e.target.value)}
-                      placeholder="Unit"
-                    />
-                    <Input
-                      className="col-span-2"
-                      value={item.remarks}
-                      onChange={(e) => updateItem(index, 'remarks', e.target.value)}
-                      placeholder="Remarks"
-                    />
+                  <div key={`${item.id || 'item'}-${index}`} className="flex gap-2 items-start p-4 neu-inset rounded-xl">
+                    <div className="flex-1">
+                      <Input
+                        value={item.description}
+                        onChange={(e) => updateItem(index, 'description', e.target.value)}
+                        placeholder="Description"
+                      />
+                    </div>
+                    <div className="w-20">
+                      <Input
+                        type="number"
+                        min={1}
+                        value={item.quantity}
+                        onChange={(e) => updateItem(index, 'quantity', Math.max(1, Number(e.target.value) || 1))}
+                        placeholder="Qty"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <Input
+                        value={item.unit}
+                        onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                        placeholder="Unit"
+                      />
+                    </div>
+                    <div className="w-28">
+                      <Input
+                        value={item.remarks}
+                        onChange={(e) => updateItem(index, 'remarks', e.target.value)}
+                        placeholder="Remarks"
+                      />
+                    </div>
                     <Button
                       type="button"
-                      variant="outline"
-                      className="col-span-1"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => removeItem(index)}
                       disabled={formData.items.length === 1}
+                      className="text-slate-400 hover:text-red-500"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -1139,27 +1189,52 @@ export function DeliveryReceipts() {
               </div>
             </div>
 
+            {/* Notes */}
             <div>
-              <Label>Notes</Label>
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
+                <FileText className="w-4 h-4 text-slate-400" />
+                Notes
+              </div>
               <div className="mt-1 neu-inset rounded-xl p-4">
                 <Textarea
                   value={formData.notes}
                   onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
-                  placeholder="Optional notes"
-                  className="border-0 bg-transparent shadow-none p-0 resize-none"
+                  placeholder="Additional notes..."
+                  className="border-0 bg-transparent shadow-none p-0 mt-1"
+                  rows={3}
                 />
               </div>
             </div>
-          </div>
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={handleSaveAsDraft} disabled={createMutation.isPending || updateMutation.isPending}>
-              <Save className="w-4 h-4 mr-2" /> Save Draft
-            </Button>
-            <Button onClick={() => handleSave('Issued')} className="text-slate-700" disabled={createMutation.isPending || updateMutation.isPending}>
-              <ClipboardCheck className="w-4 h-4 mr-2" /> {editingReceipt ? 'Update Receipt' : 'Create Receipt'}
-            </Button>
-          </DialogFooter>
+            {/* Actions */}
+            <div className="flex justify-between gap-3 pt-4 border-t border-white/60">
+              <Button variant="outline" onClick={() => {
+                setShowForm(false);
+                setEditingReceipt(null);
+                setEditingDraftId(null);
+              }} className="rounded-xl">
+                <X className="w-4 h-4 mr-2" /> Cancel
+              </Button>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={handleSaveAsDraft} 
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                  className="rounded-xl"
+                >
+                  <Save className="w-4 h-4 mr-2" /> Save Draft
+                </Button>
+                <Button 
+                  onClick={() => handleSave('Issued')} 
+                  className="rounded-xl text-slate-700" 
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
+                  <ClipboardCheck className="w-4 h-4 mr-2" /> 
+                  {editingReceipt ? 'Update Receipt' : 'Create Receipt'}
+                </Button>
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

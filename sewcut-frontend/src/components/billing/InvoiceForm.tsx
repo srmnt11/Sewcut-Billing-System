@@ -67,6 +67,8 @@ export default function InvoiceForm({
     queryFn: () => api.get('/api/billings/autofill_sources/') as Promise<QuotationAutofillSource[]>,
     enabled: open && !invoice,
   });
+
+  // --- STEP 6.1: Add paymentType to formData state ---
   const [formData, setFormData] = useState({
     billingNumber: '',
     companyName: '',
@@ -77,7 +79,8 @@ export default function InvoiceForm({
     clientEmail: '',
     items: [{ id: undefined, description: '', quantity: 1, unitPrice: 0, lineTotal: 0 } as Item],
     discount: 0,
-    notes: ''
+    notes: '',
+    paymentType: 'downpayment' as 'downpayment' | 'full'  // ← ADDED
   });
 
   // Handle client selection
@@ -145,6 +148,7 @@ export default function InvoiceForm({
     }
   };
 
+  // --- STEP 6.4: Update useEffect to include paymentType ---
   useEffect(() => {
     if (invoice) {
       // Backend returns camelCase from serializer's to_representation
@@ -164,7 +168,8 @@ export default function InvoiceForm({
           lineTotal: parseFloat(item.total) || 0
         })),
         discount: parseFloat(invoice.discount) || 0,
-        notes: invoice.notes || ''
+        notes: invoice.notes || '',
+        paymentType: invoice.paymentType || 'downpayment'  // ← ADDED
       });
       // Try to find matching client
       const matchingClient = clients.find(c => c.name === invoice.companyName);
@@ -182,14 +187,13 @@ export default function InvoiceForm({
         clientEmail: '',
         items: [{ description: '', quantity: 1, unitPrice: 0, lineTotal: 0 }],
         discount: 0,
-        notes: ''
+        notes: '',
+        paymentType: 'downpayment'  // ← ADDED
       });
       setSelectedClientId('');
       setSelectedQuotationId('');
     }
   }, [invoice, open, clients, nextNumberData]);
-
-
 
   const handleItemChange = (index: number, field: string, value: string | number) => {
     const newItems = [...formData.items];
@@ -228,7 +232,7 @@ export default function InvoiceForm({
 
   const handleSubmit = () => {
     const { subtotal, grandTotal } = calculateTotals();
-    // Send data in camelCase as expected by backend serializer's to_internal_value
+    // --- STEP 6.3: Add paymentType to onSave payload ---
     onSave({
       billingNumber: formData.billingNumber,
       companyName: formData.companyName,
@@ -246,6 +250,7 @@ export default function InvoiceForm({
       terms: '',
       status: 'Pending',
       sourceQuotationId: selectedQuotationId || invoice?.sourceQuotationId || null,
+      paymentType: formData.paymentType,  // ← ADDED
       items: formData.items.map(item => ({
         description: item.description,
         quantity: item.quantity,
@@ -295,6 +300,28 @@ export default function InvoiceForm({
                 className="mt-1"
                 disabled={!isEditable}
               />
+            </div>
+          </div>
+
+          {/* --- STEP 6.2: Add payment type dropdown near Billing Date --- */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>Payment Type</Label>
+              <Select
+                value={formData.paymentType}
+                onValueChange={(value: 'downpayment' | 'full') => 
+                  setFormData(prev => ({ ...prev, paymentType: value }))
+                }
+                disabled={!isEditable}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select payment type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="downpayment">50% Downpayment</SelectItem>
+                  <SelectItem value="full">Full Payment</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -468,29 +495,36 @@ export default function InvoiceForm({
                   <span>₱{grandTotal.toFixed(2)}</span>
                 </div>
               </div>
-              <div className="border-t border-white/60 pt-3 mt-3">
-                <p className="text-xs text-slate-500 mb-2">Payment Schedule (50% Downpayment)</p>
-                <div className="flex justify-between">
-                  <span className="text-amber-600">↓ 50% Downpayment</span>
-                  <span className="font-semibold text-amber-600">₱{downpayment.toFixed(2)}</span>
+
+              {/* --- STEP 6.3: Wrap 50/50 payment schedule in conditional --- */}
+              {formData.paymentType === 'downpayment' && (
+                <div className="border-t border-white/60 pt-3 mt-3">
+                  <p className="text-xs text-slate-500 mb-2">Payment Schedule (50% Downpayment)</p>
+                  <div className="flex justify-between">
+                    <span className="text-amber-600">↓ 50% Downpayment</span>
+                    <span className="font-semibold text-amber-600">₱{downpayment.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <span className="text-blue-600">↓ Remaining Balance (50%)</span>
+                    <span className="font-semibold text-blue-600">₱{remainingBalance.toFixed(2)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-blue-600">↓ Remaining Balance (50%)</span>
-                  <span className="font-semibold text-blue-600">₱{remainingBalance.toFixed(2)}</span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
           {/* Notes */}
           <div>
-            <Label>Notes</Label>
-            <div className="mt-1 neu-inset rounded-xl p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
+              <FileText className="w-4 h-4 text-slate-400" />
+              Notes
+            </div>
+            <div className="mt-1 neu-inset p-4">
               <Textarea
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Additional notes..."
-                className="border-0 bg-transparent shadow-none p-0 resize-none"
+                className="border-0 bg-transparent shadow-none p-0 mt-1"
                 rows={3}
                 disabled={!isEditable}
               />
@@ -509,6 +543,7 @@ export default function InvoiceForm({
                     variant="outline"
                     onClick={() => {
                       const { subtotal, grandTotal } = calculateTotals();
+                      // --- STEP 6.3: Add paymentType to onSaveAsDraft payload ---
                       onSaveAsDraft({
                         billingNumber: formData.billingNumber,
                         companyName: formData.companyName,
@@ -526,6 +561,7 @@ export default function InvoiceForm({
                         terms: '',
                         status: 'Pending',
                         sourceQuotationId: selectedQuotationId || invoice?.sourceQuotationId || null,
+                        paymentType: formData.paymentType,  // ← ADDED
                         items: formData.items.map(item => ({
                           description: item.description,
                           quantity: item.quantity,

@@ -68,6 +68,7 @@ export default function QuotationForm({
     enabled: open && !quotation,
     staleTime: 0,
   });
+
   const [formData, setFormData] = useState({
     quotationNumber: '',
     clientName: '',
@@ -96,7 +97,6 @@ export default function QuotationForm({
         coverLetterAddress: (quotation as any).coverLetterAddress || '',
         coverLetterBody: (quotation as any).coverLetterBody || 'As requested, I am pleased to enclose our quotation for the below goods. Should you have any questions or require further information, please do not hesitate to contact us.',
       });
-      // Try to find matching client
       const matchingClient = clients.find(c => c.name === quotation.companyName);
       if (matchingClient) {
         setSelectedClientId(String(matchingClient.id || matchingClient._id || ''));
@@ -172,7 +172,6 @@ export default function QuotationForm({
   const handleSubmit = () => {
     const { subtotal, total } = calculateTotals();
     
-    // Format data for backend
     const submitData = {
       quotationNumber: formData.quotationNumber,
       companyName: formData.clientName,
@@ -199,7 +198,6 @@ export default function QuotationForm({
       }))
     };
     
-    console.log('Submitting quotation data:', JSON.stringify(submitData, null, 2));
     onSave(submitData);
   };
 
@@ -229,6 +227,20 @@ export default function QuotationForm({
               />
             </div>
             <div>
+              <Label>Valid Until</Label>
+              <Input
+                type="date"
+                value={formData.validUntil}
+                onChange={(e) => setFormData(prev => ({ ...prev, validUntil: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          {/* Client Selection */}
+          <div className="space-y-4 p-4 neu-inset rounded-xl">
+            <Label className="text-base font-semibold">Client Information</Label>
+            <div>
               <Label>Client *</Label>
               <Select value={selectedClientId} onValueChange={handleClientChange}>
                 <SelectTrigger className="mt-1 neu-inset border-0 shadow-none">
@@ -243,24 +255,28 @@ export default function QuotationForm({
                     clients.map(client => {
                       const clientValue = String(client.id || client._id || '');
                       return (
-                      <SelectItem key={clientValue} value={clientValue}>
-                        {client.name}
-                      </SelectItem>
+                        <SelectItem key={clientValue} value={clientValue}>
+                          {client.name}
+                        </SelectItem>
                       );
                     })
                   )}
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Valid Until</Label>
-              <Input
-                type="date"
-                value={formData.validUntil}
-                onChange={(e) => setFormData(prev => ({ ...prev, validUntil: e.target.value }))}
-                className="mt-1"
-              />
-            </div>
+
+            {formData.clientName && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <Label className="text-xs text-slate-500">Company</Label>
+                  <p className="mt-1 text-slate-900">{formData.clientName || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500">Valid Until</Label>
+                  <p className="mt-1 text-slate-900">{formData.validUntil || '-'}</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Cover Letter */}
@@ -270,12 +286,12 @@ export default function QuotationForm({
               <Label className="text-base font-semibold">Cover Letter</Label>
               <span className="text-xs text-slate-400">(included in PDF)</span>
             </div>
-            <div className="space-y-3 p-4 neu-inset rounded-xl border border-white/60">
+            <div className="space-y-3 p-4 neu-inset rounded-xl">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="text-xs text-slate-500">Recipient Name</Label>
                   <Input
-                    placeholder="e.g. Juan Dela Cruz"
+                    placeholder="Enter recipient name"
                     value={formData.coverLetterRecipient}
                     onChange={(e) => setFormData(prev => ({ ...prev, coverLetterRecipient: e.target.value }))}
                     className="mt-1"
@@ -284,7 +300,7 @@ export default function QuotationForm({
                 <div>
                   <Label className="text-xs text-slate-500">Title / Position</Label>
                   <Input
-                    placeholder="e.g. Purchasing Manager"
+                    placeholder="Enter title or position"
                     value={formData.coverLetterRecipientTitle}
                     onChange={(e) => setFormData(prev => ({ ...prev, coverLetterRecipientTitle: e.target.value }))}
                     className="mt-1"
@@ -293,7 +309,7 @@ export default function QuotationForm({
                 <div>
                   <Label className="text-xs text-slate-500">Company</Label>
                   <Input
-                    placeholder="e.g. ABC Corporation"
+                    placeholder="Enter company name"
                     value={formData.coverLetterCompany}
                     onChange={(e) => setFormData(prev => ({ ...prev, coverLetterCompany: e.target.value }))}
                     className="mt-1"
@@ -302,7 +318,7 @@ export default function QuotationForm({
                 <div>
                   <Label className="text-xs text-slate-500">Address</Label>
                   <Input
-                    placeholder="e.g. 123 Main St, Manila"
+                    placeholder="Enter address"
                     value={formData.coverLetterAddress}
                     onChange={(e) => setFormData(prev => ({ ...prev, coverLetterAddress: e.target.value }))}
                     className="mt-1"
@@ -311,13 +327,15 @@ export default function QuotationForm({
               </div>
               <div>
                 <Label className="text-xs text-slate-500">Letter Body</Label>
-                <Textarea
-                  value={formData.coverLetterBody}
-                  onChange={(e) => setFormData(prev => ({ ...prev, coverLetterBody: e.target.value }))}
-                  placeholder="Write the body of your cover letter..."
-                  className="mt-1"
-                  rows={3}
-                />
+                <div className="mt-1 neu-inset rounded-xl p-4">
+                  <Textarea
+                    value={formData.coverLetterBody}
+                    onChange={(e) => setFormData(prev => ({ ...prev, coverLetterBody: e.target.value }))}
+                    placeholder="Write the body of your cover letter..."
+                    className="border-0 bg-transparent shadow-none p-0 mt-1"
+                    rows={3}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -351,7 +369,7 @@ export default function QuotationForm({
                 <div className="w-9" />
               </div>
               {formData.items.map((item, index) => (
-                <div key={index} className="flex gap-3 items-start p-4 neu-inset rounded-xl border border-white/60">
+                <div key={index} className="flex gap-3 items-start p-4 neu-inset rounded-xl">
                   <div className="flex-1">
                     <Input
                       placeholder="Description"
@@ -396,10 +414,10 @@ export default function QuotationForm({
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-slate-500">Subtotal</span>
-                <span>₱{subtotal.toFixed(2)}</span>
+                <span className="text-slate-800 font-semibold">₱{subtotal.toFixed(2)}</span>
               </div>
               <div className="border-t border-white/60 pt-2 mt-2">
-                <div className="flex justify-between text-xl font-bold">
+                <div className="flex justify-between text-xl font-bold text-slate-800">
                   <span>Total</span>
                   <span>₱{total.toFixed(2)}</span>
                 </div>
@@ -409,13 +427,16 @@ export default function QuotationForm({
 
           {/* Notes */}
           <div>
-            <Label>Notes</Label>
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
+              <FileText className="w-4 h-4 text-slate-400" />
+              Notes
+            </div>
             <div className="mt-1 neu-inset rounded-xl p-4">
               <Textarea
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 placeholder="Additional notes..."
-                className="border-0 bg-transparent shadow-none p-0 resize-none"
+                className="border-0 bg-transparent shadow-none p-0 mt-1"
                 rows={3}
               />
             </div>
@@ -466,7 +487,7 @@ export default function QuotationForm({
               <Button 
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="rounded-xl"
+                className="rounded-xl text-slate-700"
               >
                 <Save className="w-4 h-4 mr-2" /> 
                 {isLoading ? 'Saving...' : 'Save Quotation'}

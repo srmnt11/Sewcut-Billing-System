@@ -35,7 +35,8 @@ class BillingSerializer(serializers.ModelSerializer):
         fields = ['id', 'billing_number', 'client', 'company_name', 'billing_date', 
                   'due_date', 'company_email', 'company_phone', 'company_address',
                   'subtotal', 'tax_rate', 'tax_amount', 'discount', 'grand_total', 
-                  'notes', 'terms', 'status', 'source_quotation', 'items', 'created_at', 'updated_at']
+                  'notes', 'terms', 'status', 'payment_type',
+                  'source_quotation', 'items', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
     def to_representation(self, instance):
@@ -58,6 +59,7 @@ class BillingSerializer(serializers.ModelSerializer):
             'notes': data['notes'],
             'terms': data['terms'],
             'status': data['status'],
+            'paymentType': data['payment_type'], 
             'sourceQuotationId': data.get('source_quotation'),
             'items': data.get('items', []),
             'createdAt': data['created_at'],
@@ -82,6 +84,7 @@ class BillingSerializer(serializers.ModelSerializer):
             'notes': data.get('notes', ''),
             'terms': data.get('terms', ''),
             'status': data.get('status', 'Draft'),
+            'payment_type': data.get('paymentType', 'downpayment'),
             'source_quotation': data.get('sourceQuotationId'),
         }
         if 'items' in data:
@@ -99,6 +102,18 @@ class BillingSerializer(serializers.ModelSerializer):
         return billing
 
     def update(self, instance, validated_data):
+        new_status = validated_data.get('status', instance.status)
+        payment_type = validated_data.get('payment_type', instance.payment_type)
+
+        valid_statuses = {
+            'downpayment': ['Pending', 'Sent', 'Partial Payment', 'Delivered', 'Paid', 'Cancelled'],
+            'full': ['Pending', 'Sent', 'Paid', 'Delivered', 'Cancelled'],
+        }
+        if new_status not in valid_statuses.get(payment_type, []):
+            raise serializers.ValidationError(
+                {'status': f"'{new_status}' is not valid for payment type '{payment_type}'"}
+            )
+
         items_data = validated_data.pop('items', None)
         
         for attr, value in validated_data.items():

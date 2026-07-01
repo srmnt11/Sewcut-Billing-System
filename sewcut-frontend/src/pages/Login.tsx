@@ -236,35 +236,6 @@ export function Login() {
               </div>
             </div>
           </div>
-
-          {/* Admin context */}
-          <div className="relative z-10 space-y-6">
-            <div className="space-y-3">
-              <h1 className="text-4xl font-extrabold text-slate-800 leading-tight tracking-tight"
-                style={{ animation: 'fadeSlideUp 0.7s ease-out 0.1s both' }}>
-                Sew-cut Admin Portal
-              </h1>
-              <p className="text-slate-500 text-base leading-relaxed max-w-sm"
-                style={{ animation: 'fadeSlideUp 0.7s ease-out 0.25s both' }}>
-                Secure access to billing operations and management tools.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { icon: <ShieldCheck className="w-5 h-5" />, text: 'Role-based admin access' },
-                { icon: <LockKeyhole className="w-5 h-5" />, text: 'Protected financial records' },
-                { icon: <FileText className="w-5 h-5" />, text: 'Invoice and quotation control' },
-              ].map((f, i) => (
-                <div key={i} className="feature-item flex items-center gap-3">
-                  <div className="flex-shrink-0 w-9 h-9 rounded-xl neu-press flex items-center justify-center text-slate-600">
-                    {f.icon}
-                  </div>
-                  <span className="text-slate-600 text-sm font-medium">{f.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* ===== RIGHT — Login Form ===== */}
@@ -289,7 +260,7 @@ export function Login() {
 
             {/* Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-extrabold text-slate-900 mb-1 tracking-tight dark:text-slate-100">Admin Login</h1>
+              <h1 className="text-3xl font-extrabold text-slate-900 mb-1 tracking-tight dark:text-slate-100">Login</h1>
               <p className="text-slate-500 dark:text-slate-300">Enter your credentials to continue.</p>
             </div>
 
@@ -342,7 +313,7 @@ export function Login() {
                       value={password}
                       onChange={(e) => handlePasswordChange(e.target.value)}
                       onBlur={handlePasswordBlur}
-                      placeholder="••••••••"
+                      placeholder="Enter your password"
                       autoComplete="current-password"
                       className="border-0 shadow-none focus-visible:ring-0 bg-transparent rounded-lg h-11 text-sm pr-10"
                       disabled={isLoading}

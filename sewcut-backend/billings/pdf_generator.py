@@ -229,7 +229,7 @@ def generate_invoice_pdf(billing):
     elements.append(tt)
 
     # ==== PAYMENT BREAKDOWN ====
-    if billing.status in ['Sent', 'Partial Payment', 'Delivered']:
+    if billing.payment_type == 'downpayment' and billing.status in ['Sent', 'Partial Payment', 'Delivered']:
         elements.append(Spacer(1, 0.2 * inch))
         dp = float(billing.grand_total) * 0.5
         elements.append(Paragraph('PAYMENT BREAKDOWN', st_section))
@@ -259,8 +259,14 @@ def generate_invoice_pdf(billing):
     elements.append(Spacer(1, 0.35 * inch))
     elements.append(HRFlowable(width='100%', thickness=0.5, color=BORDER_CLR, spaceBefore=4, spaceAfter=10))
     elements.append(Paragraph('TERMS:', st_terms_head))
-    elements.append(Paragraph('1. 50% Down Payment upon confirmation of order (through bank deposit)', st_terms_item))
-    elements.append(Paragraph('2. 50% Full payment after 5 working days upon completion of orders (through bank deposit)', st_terms_item))
+
+    # Branch terms based on payment_type
+    if billing.payment_type == 'downpayment':
+        elements.append(Paragraph('1. 50% Down Payment upon confirmation of order (through bank deposit)', st_terms_item))
+        elements.append(Paragraph('2. 50% Full payment after 5 working days upon completion of orders (through bank deposit)', st_terms_item))
+    else:
+        elements.append(Paragraph('1. Full payment required upon confirmation of order (through bank deposit)', st_terms_item))
+        
     elements.append(Spacer(1, 0.1 * inch))
     elements.append(Paragraph('<b>*Deposit all payments to:</b>', _s('DEP', 9, TEXT_NORMAL, sa=4)))
     deposit = Table([

@@ -17,6 +17,14 @@ class Billing(models.Model):
         ('Cancelled', 'Cancelled'),
     ]
 
+    PAYMENT_TYPE_CHOICES = [
+        ('downpayment', '50% Downpayment'),
+        ('full', 'Full Payment'),
+    ]
+    payment_type = models.CharField(
+        max_length=20, choices=PAYMENT_TYPE_CHOICES, default='downpayment'
+    )
+
     billing_number = models.CharField(max_length=50, unique=True)
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='billings', null=True, blank=True)
     company_name = models.CharField(max_length=255)

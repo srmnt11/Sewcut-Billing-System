@@ -74,7 +74,7 @@ export default function ClientForm({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl neu-press flex items-center justify-center">
               <Building2 className="w-5 h-5 text-amber-600" />
             </div>
             {client ? 'Edit Client' : 'Add New Client'}
@@ -83,7 +83,7 @@ export default function ClientForm({
 
         <div className="space-y-6 mt-4">
           {/* Company Info */}
-          <div className="space-y-4 p-4 neu-inset rounded-xl border border-white/60">
+          <div className="space-y-4 p-4 neu-inset rounded-xl">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Building2 className="w-4 h-4 text-amber-500" />
               Company Information
@@ -122,7 +122,7 @@ export default function ClientForm({
           </div>
 
           {/* Contact Person */}
-          <div className="space-y-4 p-4 neu-inset rounded-xl border border-white/60">
+          <div className="space-y-4 p-4 neu-inset rounded-xl">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <User className="w-4 h-4 text-blue-500" />
               Contact Person
@@ -137,7 +137,7 @@ export default function ClientForm({
           </div>
 
           {/* Address */}
-          <div className="space-y-4 p-4 neu-inset rounded-xl border border-white/60">
+          <div className="space-y-4 p-4 neu-inset rounded-xl">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <MapPin className="w-4 h-4 text-emerald-500" />
               Address
@@ -146,7 +146,7 @@ export default function ClientForm({
               <Input
                 value={formData.address}
                 onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                placeholder="Street address"
+                placeholder="Enter street address"
               />
             </div>
 
@@ -156,6 +156,7 @@ export default function ClientForm({
                 <Input
                   value={formData.city}
                   onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                  placeholder="Enter city"
                   className="mt-1"
                 />
               </div>
@@ -164,12 +165,14 @@ export default function ClientForm({
                 <Input
                   value={formData.country}
                   onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
+                  placeholder="Enter country"
                   className="mt-1"
                 />
               </div>
             </div>
           </div>
 
+          {/* Status */}
           <div>
             <Label>Status</Label>
             <Select 
@@ -186,20 +189,24 @@ export default function ClientForm({
             </Select>
           </div>
 
+          {/* Notes */}
           <div>
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
               <FileText className="w-4 h-4 text-slate-400" />
               Notes
             </div>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Additional notes..."
-              className="mt-1"
-              rows={3}
-            />
+            <div className="mt-1 neu-inset rounded-xl p-4">
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Additional notes..."
+                className="border-0 bg-transparent shadow-none p-0 mt-1"
+                rows={3}
+              />
+            </div>
           </div>
 
+          {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t border-white/60">
             <Button variant="outline" onClick={onClose} className="rounded-xl">
               <X className="w-4 h-4 mr-2" /> Cancel
@@ -207,7 +214,7 @@ export default function ClientForm({
             <Button 
               onClick={handleSubmit}
               disabled={isLoading || !formData.name}
-              className="bg-amber-500 hover:bg-amber-600 rounded-xl shadow-sm"
+              className="rounded-xl text-slate-700"
             >
               <Save className="w-4 h-4 mr-2" /> 
               {isLoading ? 'Saving...' : 'Save Client'}
