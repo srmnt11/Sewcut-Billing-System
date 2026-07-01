@@ -283,6 +283,20 @@ export function DeliveryReceipts() {
     },
   });
 
+  const scheduleEmailMutation = useMutation({
+    mutationFn: ({ id, emailData }: { id: string; emailData: { to: string; subject: string; message: string; scheduled_at: string } }) =>
+      api.post(`/api/delivery-receipts/${id}/schedule-email/`, emailData),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['delivery-receipts'] });
+      setShowEmailDialog(false);
+      setEmailingReceipt(null);
+      toast.success(`Delivery receipt email scheduled for ${data?.scheduled_at ? new Date(data.scheduled_at).toLocaleString() : 'later'}`);
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Failed to schedule email');
+    },
+  });
+
   const openCreateForm = async () => {
     try {
       const next = (await api.get('/api/delivery-receipts/next-number/')) as { number: string };
@@ -480,6 +494,12 @@ export function DeliveryReceipts() {
   const handleEmailSend = (emailData: { to: string; subject: string; message: string }) => {
     if (emailingReceipt?.id) {
       sendEmailMutation.mutate({ id: emailingReceipt.id, emailData });
+    }
+  };
+
+  const handleEmailSchedule = (emailData: { to: string; subject: string; message: string; scheduled_at: string }) => {
+    if (emailingReceipt?.id) {
+      scheduleEmailMutation.mutate({ id: emailingReceipt.id, emailData });
     }
   };
 
@@ -974,17 +994,22 @@ export function DeliveryReceipts() {
           }
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingReceipt ? 'Edit Delivery Receipt' : 'New Delivery Receipt'}</DialogTitle>
+            <DialogTitle className="text-xl flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl neu-press flex items-center justify-center">
+                <ClipboardCheck className="w-5 h-5 text-emerald-600" />
+              </div>
+              {editingReceipt ? 'Edit Delivery Receipt' : 'Create New Delivery Receipt'}
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-5">
+          <div className="space-y-6 mt-4">
             {!editingReceipt && (
               <div>
                 <Label>Auto-fill From Invoice</Label>
                 <Select value={selectedInvoiceSourceId} onValueChange={handleAutofillFromInvoice}>
-                  <SelectTrigger className="mt-1" disabled={isAutofillingInvoice}>
+                  <SelectTrigger className="mt-1 neu-inset border-0 shadow-none" disabled={isAutofillingInvoice}>
                     <SelectValue placeholder={isAutofillingInvoice ? 'Applying invoice...' : 'Select invoice to auto-fill (optional)'} />
                   </SelectTrigger>
                   <SelectContent>
@@ -1008,6 +1033,7 @@ export function DeliveryReceipts() {
                 <Label>Receipt Number</Label>
                 <Input
                   value={formData.receiptNumber}
+                  className="mt-1 bg-slate-50 text-slate-500 cursor-not-allowed"
                   onChange={(e) => setFormData((prev) => ({ ...prev, receiptNumber: e.target.value }))}
                   placeholder="DR-0001"
                 />
@@ -1115,11 +1141,14 @@ export function DeliveryReceipts() {
 
             <div>
               <Label>Notes</Label>
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
-                placeholder="Optional notes"
-              />
+              <div className="mt-1 neu-inset rounded-xl p-4">
+                <Textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Optional notes"
+                  className="border-0 bg-transparent shadow-none p-0 resize-none"
+                />
+              </div>
             </div>
           </div>
 
@@ -1141,8 +1170,9 @@ export function DeliveryReceipts() {
           setEmailingReceipt(null);
         }}
         onSend={handleEmailSend}
+        onSchedule={handleEmailSchedule}
         billing={emailingReceipt}
-        isLoading={sendEmailMutation.isPending}
+        isLoading={sendEmailMutation.isPending || scheduleEmailMutation.isPending}
         documentType="Delivery Receipt"
       />
 

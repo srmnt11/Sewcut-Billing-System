@@ -99,7 +99,7 @@ export default function QuotationForm({
       // Try to find matching client
       const matchingClient = clients.find(c => c.name === quotation.companyName);
       if (matchingClient) {
-        setSelectedClientId(matchingClient.id || matchingClient._id);
+        setSelectedClientId(String(matchingClient.id || matchingClient._id || ''));
       }
     } else {
       setFormData({
@@ -210,7 +210,7 @@ export default function QuotationForm({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl neu-press flex items-center justify-center">
               <FileCheck className="w-5 h-5 text-amber-600" />
             </div>
             {quotation?.id ? 'Edit Quotation' : quotation ? 'Continue Draft' : 'Create New Quotation'}
@@ -231,7 +231,7 @@ export default function QuotationForm({
             <div>
               <Label>Client *</Label>
               <Select value={selectedClientId} onValueChange={handleClientChange}>
-                <SelectTrigger className="mt-1">
+                <SelectTrigger className="mt-1 neu-inset border-0 shadow-none">
                   <SelectValue placeholder="Select client" />
                 </SelectTrigger>
                 <SelectContent>
@@ -240,11 +240,14 @@ export default function QuotationForm({
                       No clients available. Please add a client first.
                     </div>
                   ) : (
-                    clients.map(client => (
-                      <SelectItem key={client.id || client._id} value={client.id || client._id}>
+                    clients.map(client => {
+                      const clientValue = String(client.id || client._id || '');
+                      return (
+                      <SelectItem key={clientValue} value={clientValue}>
                         {client.name}
                       </SelectItem>
-                    ))
+                      );
+                    })
                   )}
                 </SelectContent>
               </Select>
@@ -389,13 +392,13 @@ export default function QuotationForm({
           </div>
 
           {/* Totals */}
-          <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-2xl p-6 shadow-lg">
+          <div className="neu-surface-soft text-slate-700 rounded-2xl p-6">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-amber-100">Subtotal</span>
+                <span className="text-slate-500">Subtotal</span>
                 <span>₱{subtotal.toFixed(2)}</span>
               </div>
-              <div className="border-t border-amber-400 pt-2 mt-2">
+              <div className="border-t border-white/60 pt-2 mt-2">
                 <div className="flex justify-between text-xl font-bold">
                   <span>Total</span>
                   <span>₱{total.toFixed(2)}</span>
@@ -407,13 +410,15 @@ export default function QuotationForm({
           {/* Notes */}
           <div>
             <Label>Notes</Label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Additional notes..."
-              className="mt-1"
-              rows={3}
-            />
+            <div className="mt-1 neu-inset rounded-xl p-4">
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Additional notes..."
+                className="border-0 bg-transparent shadow-none p-0 resize-none"
+                rows={3}
+              />
+            </div>
           </div>
 
           {/* Actions */}
@@ -461,7 +466,7 @@ export default function QuotationForm({
               <Button 
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="bg-amber-500 hover:bg-amber-600 rounded-xl shadow-sm"
+                className="rounded-xl"
               >
                 <Save className="w-4 h-4 mr-2" /> 
                 {isLoading ? 'Saving...' : 'Save Quotation'}

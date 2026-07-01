@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Trash2, Save, X, Receipt, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { api } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface InvoiceFormProps {
   open: boolean;
@@ -282,7 +283,7 @@ export default function InvoiceForm({
               <Input
                 value={formData.billingNumber}
                 readOnly
-                className="mt-1 text-slate-500 cursor-not-allowed"
+                className="mt-1 bg-slate-50 text-slate-500 cursor-not-allowed"
               />
             </div>
             <div>
@@ -304,7 +305,7 @@ export default function InvoiceForm({
               <div>
                 <Label>Auto-fill From Approved Quotation</Label>
                 <Select value={selectedQuotationId} onValueChange={handleQuotationAutofill}>
-                  <SelectTrigger className="mt-1" disabled={isAutofilling}>
+                  <SelectTrigger className="mt-1 neu-inset border-0 shadow-none" disabled={isAutofilling}>
                     <SelectValue placeholder={isAutofilling ? 'Applying quotation...' : 'Select quotation to auto-fill (optional)'} />
                   </SelectTrigger>
                   <SelectContent>
@@ -327,7 +328,7 @@ export default function InvoiceForm({
               <div>
                 <Label>Select Client *</Label>
                 <Select value={selectedClientId} onValueChange={handleClientSelect}>
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="mt-1 neu-inset border-0 shadow-none">
                     <SelectValue placeholder="Choose a client..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -484,14 +485,16 @@ export default function InvoiceForm({
           {/* Notes */}
           <div>
             <Label>Notes</Label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Additional notes..."
-              className="mt-1"
-              rows={3}
-              disabled={!isEditable}
-            />
+            <div className="mt-1 neu-inset rounded-xl p-4">
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Additional notes..."
+                className="border-0 bg-transparent shadow-none p-0 resize-none"
+                rows={3}
+                disabled={!isEditable}
+              />
+            </div>
           </div>
 
           {/* Actions */}

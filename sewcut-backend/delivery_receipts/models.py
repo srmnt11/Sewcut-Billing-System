@@ -56,3 +56,30 @@ class DeliveryReceiptItem(models.Model):
 
     def __str__(self):
         return f"{self.description} - {self.delivery_receipt.receipt_number}"
+
+
+class ScheduledDeliveryReceiptEmail(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('sent', 'Sent'),
+        ('failed', 'Failed'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    delivery_receipt = models.ForeignKey(DeliveryReceipt, on_delete=models.CASCADE, related_name='scheduled_emails')
+    to_email = models.EmailField()
+    subject = models.CharField(max_length=255)
+    message = models.TextField(blank=True)
+    scheduled_at = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    error_message = models.TextField(blank=True)
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['scheduled_at']
+
+    def __str__(self):
+        return f"Scheduled delivery receipt email for {self.delivery_receipt.receipt_number} at {self.scheduled_at}"

@@ -301,6 +301,14 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'billings.tasks.send_due_scheduled_emails',
         'schedule': 60.0,
     },
+    'send-due-scheduled-quotation-emails-every-minute': {
+        'task': 'quotations.tasks.send_due_scheduled_quotation_emails',
+        'schedule': 60.0,
+    },
+    'send-due-scheduled-delivery-receipt-emails-every-minute': {
+        'task': 'delivery_receipts.tasks.send_due_scheduled_delivery_receipt_emails',
+        'schedule': 60.0,
+    },
 }
 
 # For testing/development you can set EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend

@@ -213,6 +213,20 @@ export function Quotations() {
     }
   });
 
+  const scheduleEmailMutation = useMutation({
+    mutationFn: ({ id, emailData }: { id: string; emailData: { to: string; subject: string; message: string; scheduled_at: string } }) =>
+      api.post(`/api/quotations/${id}/schedule-email/`, emailData),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['quotations'] });
+      setShowEmailDialog(false);
+      setEmailingQuotation(null);
+      toast.success(`Quotation email scheduled for ${data?.scheduled_at ? new Date(data.scheduled_at).toLocaleString() : 'later'}`);
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Failed to schedule email');
+    }
+  });
+
   // Define a type for Quotation if not already defined
   type QuotationType = {
     id: string;
@@ -381,6 +395,12 @@ export function Quotations() {
   const handleEmailSend = (emailData: { to: string; subject: string; message: string }) => {
     if (emailingQuotation) {
       sendEmailMutation.mutate({ id: emailingQuotation.id, emailData });
+    }
+  };
+
+  const handleEmailSchedule = (emailData: { to: string; subject: string; message: string; scheduled_at: string }) => {
+    if (emailingQuotation) {
+      scheduleEmailMutation.mutate({ id: emailingQuotation.id, emailData });
     }
   };
 
@@ -739,8 +759,9 @@ export function Quotations() {
           setEmailingQuotation(null);
         }}
         onSend={handleEmailSend}
+        onSchedule={handleEmailSchedule}
         billing={emailingQuotation as any}
-        isLoading={sendEmailMutation.isPending}
+        isLoading={sendEmailMutation.isPending || scheduleEmailMutation.isPending}
         documentType="Quotation"
       />
 

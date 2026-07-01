@@ -2,8 +2,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django.utils import timezone
 from django.http import HttpResponse
-from .models import Quotation
+from django.utils.dateparse import parse_datetime
+from .models import Quotation, ScheduledQuotationEmail
 from .pdf_generator import generate_quotation_pdf
 from sewcut.email_delivery import send_email_with_pdf_attachment
 import logging
@@ -66,6 +68,49 @@ def send_quotation_email(request, pk):
             {'error': f'Failed to send email: {str(e)}'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def schedule_quotation_email(request, pk):
+    """Schedule a quotation email to be sent at a future time."""
+    try:
+        quotation = Quotation.objects.get(pk=pk, created_by=request.user)
+    except Quotation.DoesNotExist:
+        return Response({'error': 'Quotation not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    to_email = request.data.get('to')
+    subject = request.data.get('subject', f'Quotation {quotation.quotation_number}')
+    message = request.data.get('message', '')
+    scheduled_at = request.data.get('scheduled_at')
+
+    if not to_email:
+        return Response({'error': 'Recipient email is required'}, status=status.HTTP_400_BAD_REQUEST)
+    if not scheduled_at:
+        return Response({'error': 'scheduled_at is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    scheduled_dt = parse_datetime(scheduled_at)
+    if not scheduled_dt:
+        return Response({'error': 'Invalid scheduled_at datetime'}, status=status.HTTP_400_BAD_REQUEST)
+    if scheduled_dt <= timezone.now():
+        return Response({'error': 'Scheduled time must be in the future'}, status=status.HTTP_400_BAD_REQUEST)
+
+    scheduled = ScheduledQuotationEmail.objects.create(
+        quotation=quotation,
+        to_email=to_email,
+        subject=subject,
+        message=message,
+        scheduled_at=scheduled_dt,
+        created_by=request.user,
+    )
+
+    return Response({
+        'id': scheduled.id,
+        'scheduled_at': scheduled.scheduled_at,
+        'to_email': scheduled.to_email,
+        'status': scheduled.status,
+        'message': 'Quotation email scheduled successfully',
+    }, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
