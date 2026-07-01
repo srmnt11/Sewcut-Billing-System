@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from .models import Billing
 from .models import ScheduledEmail
 from .pdf_generator import generate_invoice_pdf
+from .tasks import send_scheduled_email
 from sewcut.email_delivery import send_email_with_pdf_attachment
 import logging
 
@@ -134,11 +135,22 @@ def schedule_invoice_email(request, pk):
         created_by=request.user,
     )
 
+    try:
+        send_scheduled_email.apply_async(args=[scheduled.id], eta=scheduled_dt)
+    except Exception as exc:
+        logger.warning(
+            'Could not enqueue scheduled email %s for Celery ETA delivery; beat will process it instead: %s',
+            scheduled.id,
+            exc,
+        )
+
     return Response({
         'id': scheduled.id,
         'scheduled_at': scheduled.scheduled_at,
         'to_email': scheduled.to_email,
         'status': scheduled.status,
+        'message': 'Email scheduled successfully',
+        'delivery_mode': 'celery_attempted',
     }, status=status.HTTP_201_CREATED)
 
 

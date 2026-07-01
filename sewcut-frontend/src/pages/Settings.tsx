@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 
 export function Settings() {
   const [companySettings, setCompanySettings] = useState({
-    company_name: 'Sewcut Wearing Apparel Manufacturing',
+    company_name: 'Sew-cut Wearing Apparel Manufacturing',
     email: '',
     phone: '',
     address: '',

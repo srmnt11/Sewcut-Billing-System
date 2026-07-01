@@ -23,6 +23,9 @@ if not exist "sewcut-frontend" (
 echo Starting Backend (Django)...
 start "Sewcut Backend" cmd /k "cd sewcut-backend && python manage.py runserver"
 
+echo Starting Celery Worker...
+start "Sewcut Celery Worker" cmd /k "cd sewcut-backend && celery -A sewcut worker -l info --pool=solo"
+
 echo Waiting for backend to start...
 timeout /t 3 /nobreak > nul
 

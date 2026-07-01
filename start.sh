@@ -15,6 +15,8 @@ echo "📦 Starting Backend (Django)..."
 cd sewcut-backend
 python manage.py runserver &
 BACKEND_PID=$!
+celery -A sewcut worker -l info &
+WORKER_PID=$!
 cd ..
 
 # Wait a bit for backend to start
@@ -43,5 +45,5 @@ echo "Press Ctrl+C to stop both servers"
 echo ""
 
 # Wait for Ctrl+C
-trap "kill $BACKEND_PID $FRONTEND_PID; exit" INT
+trap "kill $BACKEND_PID $WORKER_PID $FRONTEND_PID; exit" INT
 wait

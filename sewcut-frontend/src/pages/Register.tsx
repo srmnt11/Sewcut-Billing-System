@@ -222,14 +222,14 @@ export function Register() {
               <FileText className="w-7 h-7 text-slate-700" />
             </div>
             <div>
-              <h2 className="text-slate-800 text-xl font-bold">Sewcut</h2>
+              <h2 className="text-slate-800 text-xl font-bold">Sew-cut</h2>
               <p className="text-slate-500 text-sm">Apparel Manufacturing</p>
             </div>
           </div>
           
           <div className="mt-16 space-y-6">
             <h1 className="text-4xl font-bold text-slate-800 leading-tight">
-              Join Sewcut<br />Billing System
+              Join Sew-cut<br />Billing System
             </h1>
             <p className="text-slate-500 text-lg">
               Create your account and start managing your business more efficiently.

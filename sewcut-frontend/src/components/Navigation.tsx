@@ -22,7 +22,7 @@ export function Navigation() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
-              <span className="text-xl font-bold text-gray-900">Sewcut</span>
+              <span className="text-xl font-bold text-gray-900">Sew-cut</span>
             </Link>
 
             {isAuthenticated && (

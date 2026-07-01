@@ -21,6 +21,8 @@ def send_email_with_pdf_attachment(subject, message, to_email, filename, file_by
     sendgrid_from_email = os.environ.get('SENDGRID_FROM_EMAIL', '').strip()
     resend_api_key = os.environ.get('RESEND_API_KEY', '').strip()
     resend_from_email = os.environ.get('RESEND_FROM_EMAIL', '').strip()
+    email_host_user = os.environ.get('EMAIL_HOST_USER', '').strip()
+    email_host_password = os.environ.get('EMAIL_HOST_PASSWORD', '').strip()
     timeout = int(getattr(settings, 'EMAIL_TIMEOUT', 20))
 
     if sendgrid_api_key and sendgrid_from_email:
@@ -114,6 +116,12 @@ def send_email_with_pdf_attachment(subject, message, to_email, filename, file_by
 
         raise RuntimeError(
             f'Resend API failed ({response.status_code}): {response.text[:300]}'
+        )
+
+    if not email_host_user or not email_host_password:
+        raise RuntimeError(
+            'No email provider is configured. Set SENDGRID_API_KEY + SENDGRID_FROM_EMAIL, '
+            'RESEND_API_KEY + RESEND_FROM_EMAIL, or EMAIL_HOST_USER + EMAIL_HOST_PASSWORD.'
         )
 
     try:

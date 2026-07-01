@@ -134,7 +134,7 @@ export function BillingPreview() {
         body: JSON.stringify({
           to: data.companyEmail,
           subject: `Invoice ${data.billingNumber}`,
-          message: `Dear ${data.companyName},\n\nPlease find the attached invoice ${data.billingNumber}.\n\nTotal Amount: ₱${data.grandTotal?.toLocaleString()}\n\nThank you for your business.\n\nBest regards,\n${companyInfo.company_name || 'Sewcut Wearing Apparel Manufacturing'}`
+          message: `Dear ${data.companyName},\n\nPlease find the attached invoice ${data.billingNumber}.\n\nTotal Amount: ₱${data.grandTotal?.toLocaleString()}\n\nThank you for your business.\n\nBest regards,\n${companyInfo.company_name || 'Sew-cut Wearing Apparel Manufacturing'}`
         })
       });
       
@@ -235,7 +235,7 @@ export function BillingPreview() {
                   <h1 className="text-3xl font-bold text-slate-900 mb-1">
                     INVOICE
                   </h1>
-                  <p className="text-sm text-slate-600">Sewcut Billing System</p>
+                  <p className="text-sm text-slate-600">Sew-cut Billing System</p>
                 </div>
                 <div className="text-right">
                   <div className="neu-inset px-4 py-2 rounded-lg inline-block">
@@ -253,7 +253,7 @@ export function BillingPreview() {
                     From
                   </h3>
                   <div className="space-y-1">
-                    <p className="font-bold text-slate-900 text-sm">{companyInfo.company_name || 'Sewcut Wearing Apparel Manufacturing'}</p>
+                    <p className="font-bold text-slate-900 text-sm">{companyInfo.company_name || 'Sew-cut Wearing Apparel Manufacturing'}</p>
                     {(companyInfo.address || companyInfo.city) && (
                       <p className="text-xs text-slate-600">{[companyInfo.address, companyInfo.city, companyInfo.country].filter(Boolean).join(', ')}</p>
                     )}

@@ -231,7 +231,7 @@ export function Login() {
                 <FileText className="w-8 h-8 text-slate-700" />
               </div>
               <div>
-                <h2 className="text-slate-800 text-2xl font-bold tracking-tight">Sewcut</h2>
+                <h2 className="text-slate-800 text-2xl font-bold tracking-tight">Sew-cut</h2>
                 <p className="text-slate-500 text-sm">Apparel Manufacturing</p>
               </div>
             </div>
@@ -242,7 +242,7 @@ export function Login() {
             <div className="space-y-3">
               <h1 className="text-4xl font-extrabold text-slate-800 leading-tight tracking-tight"
                 style={{ animation: 'fadeSlideUp 0.7s ease-out 0.1s both' }}>
-                Sewcut Admin Portal
+                Sew-cut Admin Portal
               </h1>
               <p className="text-slate-500 text-base leading-relaxed max-w-sm"
                 style={{ animation: 'fadeSlideUp 0.7s ease-out 0.25s both' }}>
@@ -282,7 +282,7 @@ export function Login() {
                 <FileText className="w-6 h-6 text-slate-700" />
               </div>
               <div>
-                <h2 className="text-slate-900 text-lg font-bold">Sewcut</h2>
+                <h2 className="text-slate-900 text-lg font-bold">Sew-cut</h2>
                 <p className="text-slate-500 text-xs">Apparel Manufacturing</p>
               </div>
             </div>

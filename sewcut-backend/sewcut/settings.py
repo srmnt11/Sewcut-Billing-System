@@ -276,6 +276,33 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
+# Celery Settings - default to a local filesystem broker for Windows development.
+celery_broker_dir = BASE_DIR / 'celerybroker'
+celery_broker_out = celery_broker_dir / 'out'
+celery_broker_in = celery_broker_out
+celery_broker_processed = celery_broker_dir / 'processed'
+for path in (celery_broker_dir, celery_broker_in, celery_broker_out, celery_broker_processed):
+    os.makedirs(path, exist_ok=True)
+
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'filesystem://')
+CELERY_BROKER_TRANSPORT_OPTIONS = {
+    'data_folder_in': str(celery_broker_in),
+    'data_folder_out': str(celery_broker_out),
+    'data_folder_processed': str(celery_broker_processed),
+}
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND') or None
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = USE_TZ
+CELERY_BEAT_SCHEDULE = {
+    'send-due-scheduled-emails-every-minute': {
+        'task': 'billings.tasks.send_due_scheduled_emails',
+        'schedule': 60.0,
+    },
+}
+
 # For testing/development you can set EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 
 if not DEBUG:

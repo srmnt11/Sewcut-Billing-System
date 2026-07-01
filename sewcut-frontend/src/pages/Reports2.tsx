@@ -243,7 +243,7 @@ export  function Reports2() {
   .footer { margin-top: 30px; padding-top: 16px; border-top: 1px solid #e2e8f0; text-align: center; color: #94a3b8; font-size: 11px; }
 </style></head><body>
   <div class="header">
-    <div class="brand">Sewcut Wearing Apparel Manufacturing</div>
+    <div class="brand">Sew-cut Wearing Apparel Manufacturing</div>
     <h1>${reportTitle}</h1>
     <div class="subtitle">Generated on ${format(new Date(), 'MMMM d, yyyy \'at\' h:mm a')} &bull; ${reportData.data.length} records</div>
   </div>
@@ -262,7 +262,7 @@ export  function Reports2() {
     <tbody>${buildRows()}</tbody>
   </table>
   <div class="footer">
-    <p>Sewcut Wearing Apparel Manufacturing &bull; Business Report</p>
+    <p>Sew-cut Wearing Apparel Manufacturing &bull; Business Report</p>
   </div>
 </body></html>`;
 

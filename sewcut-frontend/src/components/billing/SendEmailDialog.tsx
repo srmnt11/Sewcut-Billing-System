@@ -35,16 +35,36 @@ export default function SendEmailDialog({
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
 
+  const getLocalDateString = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getLocalTimeString = (date: Date) => {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
+  const getMinScheduledDateTime = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 1);
+    now.setSeconds(0, 0);
+    return now;
+  };
+
   const buildDefaultMessage = () => {
     if (documentType === 'Delivery Receipt') {
-      return `Dear ${billing?.companyName || 'Valued Client'},\n\nPlease find the attached delivery receipt ${documentNumber} for your reference.\n\nDelivery Date: ${deliveryDate}\nReference Number: ${referenceNumber}\n\nIf you have any questions, please don't hesitate to contact us.\n\nBest regards,\nSewcut Team`;
+      return `Dear ${billing?.companyName || 'Valued Client'},\n\nPlease find the attached delivery receipt ${documentNumber} for your reference.\n\nDelivery Date: ${deliveryDate}\nReference Number: ${referenceNumber}\n\nIf you have any questions, please don't hesitate to contact us.\n\nBest regards,\nSew-cut Team`;
     }
-    return `Dear ${billing?.companyName || 'Valued Client'},\n\nPlease find the attached ${documentTypeLower} ${documentNumber} for your review.\n\nTotal Amount: ₱${billing?.grandTotal?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}\n\nIf you have any questions, please don't hesitate to contact us.\n\nBest regards,\nSewcut Team`;
+    return `Dear ${billing?.companyName || 'Valued Client'},\n\nPlease find the attached ${documentTypeLower} ${documentNumber} for your review.\n\nTotal Amount: ₱${billing?.grandTotal?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}\n\nIf you have any questions, please don't hesitate to contact us.\n\nBest regards,\nSew-cut Team`;
   };
 
   const buildInitialEmailData = () => ({
     to: billing?.companyEmail || '',
-    subject: `${documentType} ${documentNumber} from Sewcut`,
+    subject: `${documentType} ${documentNumber} from Sew-cut`,
     message: buildDefaultMessage(),
   });
 
@@ -54,16 +74,28 @@ export default function SendEmailDialog({
     if (open) {
       setEmailData(buildInitialEmailData());
       setIsScheduled(false);
-      setScheduledDate('');
-      setScheduledTime('');
+      const defaultScheduled = getMinScheduledDateTime();
+      setScheduledDate(getLocalDateString(defaultScheduled));
+      setScheduledTime(getLocalTimeString(defaultScheduled));
     }
   }, [open, billing, documentType]);
 
-  const isScheduleValid = scheduledDate !== '' && scheduledTime !== '';
+  const scheduledAtIso = scheduledDate && scheduledTime
+    ? new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+    : '';
+
+  const isScheduleValid =
+    scheduledDate !== '' &&
+    scheduledTime !== '' &&
+    scheduledAtIso !== '' &&
+    new Date(scheduledAtIso) > new Date();
 
   const handleSend = () => {
     if (isScheduled) {
-      const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`).toISOString();
+      if (!isScheduleValid) {
+        return;
+      }
+      const scheduledAt = scheduledAtIso;
       onSchedule?.({ ...emailData, scheduled_at: scheduledAt });
     } else {
       onSend(emailData);
@@ -77,7 +109,7 @@ export default function SendEmailDialog({
     emailData.message &&
     (!isScheduled || isScheduleValid);
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const minDate = getLocalDateString(new Date());
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -173,7 +205,7 @@ export default function SendEmailDialog({
                   type="date"
                   value={scheduledDate}
                   onChange={(e) => setScheduledDate(e.target.value)}
-                  min={todayStr}
+                  min={minDate}
                   className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
@@ -191,7 +223,7 @@ export default function SendEmailDialog({
               <div className="col-span-2 flex items-start gap-2">
                 <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-700 dark:text-amber-300">
-                  The PDF will be generated and sent automatically at the scheduled time.
+                  The PDF will be generated and sent automatically at the scheduled time. Pick a time at least 1 minute in the future.
                 </p>
               </div>
             </div>
