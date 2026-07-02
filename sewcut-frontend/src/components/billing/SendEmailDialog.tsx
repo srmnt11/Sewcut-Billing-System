@@ -113,13 +113,6 @@ export default function SendEmailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      {/*
-        ─── KEY FIXES ───────────────────────────────────────────────────────────
-        1. max-h-[90dvh] + flex flex-col  →  dialog never overflows the viewport
-        2. overflow-y-auto on the body    →  content scrolls inside the dialog
-        3. All amber/blue hardcoded colors replaced with dark:-aware variants
-        ─────────────────────────────────────────────────────────────────────────
-      */}
       <DialogContent className="max-w-2xl max-h-[90dvh] flex flex-col p-0 gap-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
 
         {/* ── Fixed header (never scrolls away) ── */}

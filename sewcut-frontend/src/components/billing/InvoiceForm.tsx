@@ -68,7 +68,7 @@ export default function InvoiceForm({
     enabled: open && !invoice,
   });
 
-  // --- STEP 6.1: Add paymentType to formData state ---
+  // --- STEP 5: Add poDate and deliveryDate to formData state ---
   const [formData, setFormData] = useState({
     billingNumber: '',
     companyName: '',
@@ -80,7 +80,9 @@ export default function InvoiceForm({
     items: [{ id: undefined, description: '', quantity: 1, unitPrice: 0, lineTotal: 0 } as Item],
     discount: 0,
     notes: '',
-    paymentType: 'downpayment' as 'downpayment' | 'full'  // ← ADDED
+    paymentType: 'downpayment' as 'downpayment' | 'full',
+    poDate: '',        // ← ADDED
+    deliveryDate: ''   // ← ADDED
   });
 
   // Handle client selection
@@ -129,6 +131,8 @@ export default function InvoiceForm({
         items: mappedItems,
         discount: parseFloat(payload.discount) || 0,
         notes: payload.notes || '',
+        poDate: payload.poDate || '',           // ← ADDED
+        deliveryDate: payload.deliveryDate || '' // ← ADDED
       }));
 
       const matchedClient = clients.find((client) => {
@@ -148,7 +152,7 @@ export default function InvoiceForm({
     }
   };
 
-  // --- STEP 6.4: Update useEffect to include paymentType ---
+  // --- STEP 5: Update useEffect to include poDate and deliveryDate ---
   useEffect(() => {
     if (invoice) {
       // Backend returns camelCase from serializer's to_representation
@@ -169,7 +173,9 @@ export default function InvoiceForm({
         })),
         discount: parseFloat(invoice.discount) || 0,
         notes: invoice.notes || '',
-        paymentType: invoice.paymentType || 'downpayment'  // ← ADDED
+        paymentType: invoice.paymentType || 'downpayment',
+        poDate: invoice.poDate || '',           // ← ADDED
+        deliveryDate: invoice.deliveryDate || '' // ← ADDED
       });
       // Try to find matching client
       const matchingClient = clients.find(c => c.name === invoice.companyName);
@@ -188,7 +194,9 @@ export default function InvoiceForm({
         items: [{ description: '', quantity: 1, unitPrice: 0, lineTotal: 0 }],
         discount: 0,
         notes: '',
-        paymentType: 'downpayment'  // ← ADDED
+        paymentType: 'downpayment',
+        poDate: '',        // ← ADDED
+        deliveryDate: ''   // ← ADDED
       });
       setSelectedClientId('');
       setSelectedQuotationId('');
@@ -232,7 +240,7 @@ export default function InvoiceForm({
 
   const handleSubmit = () => {
     const { subtotal, grandTotal } = calculateTotals();
-    // --- STEP 6.3: Add paymentType to onSave payload ---
+    // --- STEP 5: Add poDate and deliveryDate to onSave payload ---
     onSave({
       billingNumber: formData.billingNumber,
       companyName: formData.companyName,
@@ -250,7 +258,9 @@ export default function InvoiceForm({
       terms: '',
       status: 'Pending',
       sourceQuotationId: selectedQuotationId || invoice?.sourceQuotationId || null,
-      paymentType: formData.paymentType,  // ← ADDED
+      paymentType: formData.paymentType,
+      poDate: formData.poDate,              // ← ADDED
+      deliveryDate: formData.deliveryDate,  // ← ADDED
       items: formData.items.map(item => ({
         description: item.description,
         quantity: item.quantity,
@@ -262,11 +272,7 @@ export default function InvoiceForm({
 
   const { subtotal, grandTotal, downpayment, remainingBalance } = calculateTotals();
   
-  // Check if invoice is editable:
-  // - New invoice (no invoice prop)
-  // - Editing a draft (isEditingDraft = true)
-  // - Saved billing with 'Pending' status
-  const isEditable = !invoice || isEditingDraft || invoice.status === 'Pending';
+  const isEditable = !invoice || isEditingDraft || Boolean(invoice);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -303,7 +309,31 @@ export default function InvoiceForm({
             </div>
           </div>
 
-          {/* --- STEP 6.2: Add payment type dropdown near Billing Date --- */}
+          {/* --- STEP 5: Add PO Date and Delivery Date input fields --- */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>PO Date</Label>
+              <Input
+                type="date"
+                value={formData.poDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, poDate: e.target.value }))}
+                className="mt-1"
+                disabled={!isEditable}
+              />
+            </div>
+            <div>
+              <Label>Delivery Date</Label>
+              <Input
+                type="date"
+                value={formData.deliveryDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, deliveryDate: e.target.value }))}
+                className="mt-1"
+                disabled={!isEditable}
+              />
+            </div>
+          </div>
+
+          {/* Payment Type */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Payment Type</Label>
@@ -496,7 +526,6 @@ export default function InvoiceForm({
                 </div>
               </div>
 
-              {/* --- STEP 6.3: Wrap 50/50 payment schedule in conditional --- */}
               {formData.paymentType === 'downpayment' && (
                 <div className="border-t border-white/60 pt-3 mt-3">
                   <p className="text-xs text-slate-500 mb-2">Payment Schedule (50% Downpayment)</p>
@@ -538,12 +567,12 @@ export default function InvoiceForm({
             </Button>
             {isEditable && (
               <div className="flex gap-3">
-                {onSaveAsDraft && (
+                {onSaveAsDraft && !invoice && (
                   <Button 
                     variant="outline"
                     onClick={() => {
                       const { subtotal, grandTotal } = calculateTotals();
-                      // --- STEP 6.3: Add paymentType to onSaveAsDraft payload ---
+                      // --- STEP 5: Add poDate and deliveryDate to onSaveAsDraft payload ---
                       onSaveAsDraft({
                         billingNumber: formData.billingNumber,
                         companyName: formData.companyName,
@@ -561,7 +590,9 @@ export default function InvoiceForm({
                         terms: '',
                         status: 'Pending',
                         sourceQuotationId: selectedQuotationId || invoice?.sourceQuotationId || null,
-                        paymentType: formData.paymentType,  // ← ADDED
+                        paymentType: formData.paymentType,
+                        poDate: formData.poDate,              // ← ADDED
+                        deliveryDate: formData.deliveryDate,  // ← ADDED
                         items: formData.items.map(item => ({
                           description: item.description,
                           quantity: item.quantity,

@@ -252,6 +252,12 @@ export function Billing() {
     }
   };
 
+  const handleEdit = (invoice: Invoice) => {
+    setEditingDraftId(null);
+    setEditingInvoice(invoice);
+    setShowForm(true);
+  };
+
   // --- STEP 7.1: Replace handleMarkAsPaid with paymentType-aware version ---
   const handleMarkAsPaid = (invoice: { id: any; status: string; paymentType?: string }) => {
     const paymentType = invoice.paymentType || 'downpayment'; // Default to downpayment if not set
@@ -602,6 +608,9 @@ export function Billing() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEdit(row as Invoice); }}>
+                <FileText className="w-4 h-4 mr-2" /> Edit Invoice
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handlePreviewPDF(row); }}>
                 <FileText className="w-4 h-4 mr-2" /> Preview PDF
               </DropdownMenuItem>

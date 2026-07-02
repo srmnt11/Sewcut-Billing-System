@@ -40,7 +40,7 @@ const navItems: NavItem[] = [
   { name: 'Sales', icon: ShoppingCart, page: 'Sales' },
   { name: 'Clients', icon: Users, page: 'Clients' },
   { name: 'Quotations', icon: FileCheck, page: 'Quotations' },
-  { name: 'Billing', icon: FileText, page: 'Billing' },
+  { name: 'Invoices', icon: FileText, page: 'Billing' },
   { name: 'Delivery Receipts', icon: ClipboardCheck, page: 'Delivery Receipts' },
   { name: 'Suppliers', icon: Truck, page: 'Suppliers' },
   { name: 'Reports', icon: PieChart, page: 'Reports' },

@@ -155,15 +155,22 @@ def generate_invoice_pdf(billing):
     elements.append(HRFlowable(width='100%', thickness=2, color=BRAND_AMBER, spaceAfter=16))
 
     # ==== META + BILL TO ====
+    # Step 4a: Compute formatted strings
     inv_date = billing.billing_date.strftime('%B %d, %Y') if billing.billing_date else datetime.now().strftime('%B %d, %Y')
     due_date = billing.due_date.strftime('%B %d, %Y') if hasattr(billing, 'due_date') and billing.due_date else 'Upon receipt'
+    po_date = billing.po_date.strftime('%B %d, %Y') if getattr(billing, 'po_date', None) else 'N/A'              # ← ADD
+    delivery_date = billing.delivery_date.strftime('%B %d, %Y') if getattr(billing, 'delivery_date', None) else 'N/A'  # ← ADD
 
+    # Step 4b: Add rows to the left details table
     left = Table([
         [Paragraph('INVOICE DETAILS', st_label)],
         [Paragraph(f'<b>Number:</b>  {billing.billing_number}', st_value)],
         [Paragraph(f'<b>Date:</b>  {inv_date}', st_value)],
         [Paragraph(f'<b>Due:</b>  {due_date}', st_value)],
+        [Paragraph(f'<b>PO Date:</b>  {po_date}', st_value)],              # ← ADD
+        [Paragraph(f'<b>Delivery Date:</b>  {delivery_date}', st_value)],  # ← ADD
     ], colWidths=[W * 0.45])
+    
     right = Table([
         [Paragraph('BILL TO', st_label)],
         [Paragraph(f'<b>{billing.company_name}</b>', st_value)],

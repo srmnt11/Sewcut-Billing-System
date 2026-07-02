@@ -30,7 +30,9 @@ class Billing(models.Model):
     company_name = models.CharField(max_length=255)
     billing_date = models.DateField()
     due_date = models.DateField(null=True, blank=True)
-    
+    po_date = models.DateField(null=True, blank=True)         
+    delivery_date = models.DateField(null=True, blank=True)
+
     # Company Info
     company_email = models.EmailField(blank=True)
     company_phone = models.CharField(max_length=20, blank=True)

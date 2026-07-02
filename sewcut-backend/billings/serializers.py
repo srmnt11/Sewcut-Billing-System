@@ -33,9 +33,9 @@ class BillingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Billing
         fields = ['id', 'billing_number', 'client', 'company_name', 'billing_date', 
-                  'due_date', 'company_email', 'company_phone', 'company_address',
-                  'subtotal', 'tax_rate', 'tax_amount', 'discount', 'grand_total', 
-                  'notes', 'terms', 'status', 'payment_type',
+                  'due_date', 'po_date', 'delivery_date', 'company_email', 'company_phone', 
+                  'company_address', 'subtotal', 'tax_rate', 'tax_amount', 'discount', 
+                  'grand_total', 'notes', 'terms', 'status', 'payment_type',
                   'source_quotation', 'items', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
@@ -48,6 +48,8 @@ class BillingSerializer(serializers.ModelSerializer):
             'companyName': data['company_name'],
             'billingDate': data['billing_date'],
             'dueDate': data['due_date'],
+            'poDate': data['po_date'],              
+            'deliveryDate': data['delivery_date'], 
             'companyEmail': data['company_email'],
             'companyPhone': data['company_phone'],
             'companyAddress': data['company_address'],
@@ -73,6 +75,8 @@ class BillingSerializer(serializers.ModelSerializer):
             'company_name': data.get('companyName'),
             'billing_date': data.get('billingDate'),
             'due_date': data.get('dueDate'),
+            'po_date': data.get('poDate'),       
+            'delivery_date': data.get('deliveryDate'), 
             'company_email': data.get('companyEmail', ''),
             'company_phone': data.get('companyPhone', ''),
             'company_address': data.get('companyAddress', ''),
