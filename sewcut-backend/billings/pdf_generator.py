@@ -270,12 +270,15 @@ def generate_invoice_pdf(billing):
     # Branch terms based on payment_type
     if billing.payment_type == 'downpayment':
         elements.append(Paragraph('1. 50% Down Payment upon confirmation of order (through bank deposit)', st_terms_item))
-        elements.append(Paragraph('2. 50% Full payment after 5 working days upon completion of orders (through bank deposit)', st_terms_item))
+        elements.append(Paragraph('2. Lead time of 30 working days from date of down payment', st_terms_item))
+        elements.append(Paragraph('3. 50% Full payment after 5 working days upon completion of orders (through bank deposit)', st_terms_item))
     else:
         elements.append(Paragraph('1. Full payment required upon confirmation of order (through bank deposit)', st_terms_item))
+        elements.append(Paragraph('2. Lead time of 30 working days from date of full payment', st_terms_item))
+            
+        elements.append(Spacer(1, 0.1 * inch))
+        elements.append(Paragraph('<b>*Deposit all payments to:</b>', _s('DEP', 9, TEXT_NORMAL, sa=4)))
         
-    elements.append(Spacer(1, 0.1 * inch))
-    elements.append(Paragraph('<b>*Deposit all payments to:</b>', _s('DEP', 9, TEXT_NORMAL, sa=4)))
     deposit = Table([
         [Paragraph('<font color="#dc2626"><b>BDO Account Name:</b></font>', _s('BN', 9, TEXT_NORMAL, sa=2)),
          Paragraph('<b>SEW-CUT WEARING APPAREL MANUFACTURING</b>', _s('BV', 9, TEXT_NORMAL, sa=2))],

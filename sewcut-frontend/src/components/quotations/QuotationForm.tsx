@@ -120,21 +120,43 @@ export default function QuotationForm({
   }, [quotation, open, clients, nextNumberData]);
 
   const handleClientChange = (clientId: string) => {
-    setSelectedClientId(clientId);
-    const client = clients.find(c => (c.id || c._id) === clientId);
-    if (client) {
-      const resolvedCompanyName = client.name || client.companyName || '';
-      const resolvedAddress = [client.address, client.city, client.country].filter(Boolean).join(', ');
+  setSelectedClientId(clientId);
 
-      setFormData(prev => ({
-        ...prev,
-        clientName: resolvedCompanyName,
-        coverLetterCompany: prev.coverLetterCompany || resolvedCompanyName,
-        coverLetterRecipient: prev.coverLetterRecipient || client.contactPerson || '',
-        coverLetterAddress: prev.coverLetterAddress || resolvedAddress,
-      }));
-    }
-  };
+  const client = clients.find(
+    c => String(c.id ?? c._id ?? '') === String(clientId)
+  );
+
+  if (client) {
+    const resolvedCompanyName =
+      client.name ||
+      client.companyName ||
+      (client as any).company_name ||
+      '';
+
+    const resolvedContact =
+      client.contactPerson ||
+      (client as any).contact_person ||
+      '';
+
+    const resolvedAddress = [
+      client.address,
+      client.city,
+      client.country,
+    ].filter(Boolean).join(', ');
+
+    console.log('Selected client:', client, '-> resolved name:', resolvedCompanyName);
+
+    setFormData(prev => ({
+      ...prev,
+      clientName: resolvedCompanyName,
+      coverLetterCompany: prev.coverLetterCompany || resolvedCompanyName,
+      coverLetterRecipient: prev.coverLetterRecipient || resolvedContact,
+      coverLetterAddress: prev.coverLetterAddress || resolvedAddress,
+    }));
+  } else {
+    console.warn('No matching client found for id:', clientId, 'in', clients);
+  }
+};
 
   const handleItemChange = (index: number, field: string, value: string | number) => {
     const newItems = [...formData.items];
@@ -169,37 +191,42 @@ export default function QuotationForm({
     return { subtotal, total };
   };
 
-  const handleSubmit = () => {
-    const { subtotal, total } = calculateTotals();
-    
-    const submitData = {
-      quotationNumber: formData.quotationNumber,
-      companyName: formData.clientName,
-      quotationDate: format(new Date(), 'yyyy-MM-dd'),
-      validUntil: formData.validUntil,
-      subtotal: subtotal,
-      taxRate: 0,
-      taxAmount: 0,
-      discount: 0,
-      grandTotal: total,
-      notes: formData.notes || '',
-      terms: '',
-      status: formData.status === 'Draft' ? 'Pending' : (formData.status || 'Pending'),
-      coverLetterRecipient: formData.coverLetterRecipient || '',
-      coverLetterRecipientTitle: formData.coverLetterRecipientTitle || '',
-      coverLetterCompany: formData.coverLetterCompany || '',
-      coverLetterAddress: formData.coverLetterAddress || '',
-      coverLetterBody: formData.coverLetterBody || '',
-      items: formData.items.map(item => ({
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        total: item.lineTotal
-      }))
-    };
-    
-    onSave(submitData);
+const handleSubmit = () => {
+  if (!formData.clientName?.trim()) {
+    alert('Please select a client before saving — client name is missing.');
+    return;
+  }
+
+  const { subtotal, total } = calculateTotals();
+
+  const submitData = {
+    quotationNumber: formData.quotationNumber,
+    companyName: formData.clientName,
+    quotationDate: format(new Date(), 'yyyy-MM-dd'),
+    validUntil: formData.validUntil,
+    subtotal: subtotal,
+    taxRate: 0,
+    taxAmount: 0,
+    discount: 0,
+    grandTotal: total,
+    notes: formData.notes || '',
+    terms: '',
+    status: formData.status === 'Draft' ? 'Pending' : (formData.status || 'Pending'),
+    coverLetterRecipient: formData.coverLetterRecipient || '',
+    coverLetterRecipientTitle: formData.coverLetterRecipientTitle || '',
+    coverLetterCompany: formData.coverLetterCompany || '',
+    coverLetterAddress: formData.coverLetterAddress || '',
+    coverLetterBody: formData.coverLetterBody || '',
+    items: formData.items.map(item => ({
+      description: item.description,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      total: item.lineTotal
+    }))
   };
+
+  onSave(submitData);
+};
 
   const { subtotal, total } = calculateTotals();
 

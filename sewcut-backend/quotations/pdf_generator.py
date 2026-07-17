@@ -329,10 +329,17 @@ def generate_quotation_pdf(quotation):
     elements.append(Spacer(1, 0.35 * inch))
     elements.append(HRFlowable(width='100%', thickness=0.5, color=BORDER_CLR, spaceBefore=4, spaceAfter=10))
     elements.append(Paragraph('TERMS:', _s('TH2', 9, TEXT_MUTED, True, sa=6)))
+    elements.append(Paragraph('<b>If paying via 50% Down Payment:</b>', st_terms_item))
     elements.append(Paragraph('1. 50% Down Payment upon confirmation of order (through bank deposit)', st_terms_item))
-    elements.append(Paragraph('2. 50% Full payment after 5 working days upon completion of orders (through bank deposit)', st_terms_item))
+    elements.append(Paragraph('2. Lead time of 30 working days from date of down payment', st_terms_item))
+    elements.append(Paragraph('3. 50% Full payment after 5 working days upon completion of orders (through bank deposit)', st_terms_item))
+    elements.append(Spacer(1, 0.08 * inch))
+    elements.append(Paragraph('<b>If paying in Full:</b>', st_terms_item))
+    elements.append(Paragraph('1. Full payment required upon confirmation of order (through bank deposit)', st_terms_item))
+    elements.append(Paragraph('2. Lead time of 30 working days from date of full payment', st_terms_item))
     elements.append(Spacer(1, 0.1 * inch))
     elements.append(Paragraph('<b>*Deposit all payments to:</b>', _s('DEP', 9, TEXT_NORMAL, sa=4)))
+    
     deposit = Table([
         [Paragraph('<font color="#dc2626"><b>BDO Account Name:</b></font>', _s('BN', 9, TEXT_NORMAL, sa=2)),
          Paragraph('<b>SEW-CUT WEARING APPAREL MANUFACTURING</b>', _s('BV', 9, TEXT_NORMAL, sa=2))],
