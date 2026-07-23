@@ -68,7 +68,6 @@ export default function InvoiceForm({
     enabled: open && !invoice,
   });
 
-  // --- STEP 5: Add poDate and deliveryDate to formData state ---
   const [formData, setFormData] = useState({
     billingNumber: '',
     companyName: '',
@@ -81,8 +80,8 @@ export default function InvoiceForm({
     discount: 0,
     notes: '',
     paymentType: 'downpayment' as 'downpayment' | 'full',
-    poDate: '',        // ← ADDED
-    deliveryDate: ''   // ← ADDED
+    poDate: '',
+    deliveryDate: ''
   });
 
   // Handle client selection
@@ -131,8 +130,8 @@ export default function InvoiceForm({
         items: mappedItems,
         discount: parseFloat(payload.discount) || 0,
         notes: payload.notes || '',
-        poDate: payload.poDate || '',           // ← ADDED
-        deliveryDate: payload.deliveryDate || '' // ← ADDED
+        poDate: payload.poDate || '',
+        deliveryDate: payload.deliveryDate || ''
       }));
 
       const matchedClient = clients.find((client) => {
@@ -152,7 +151,6 @@ export default function InvoiceForm({
     }
   };
 
-  // --- STEP 5: Update useEffect to include poDate and deliveryDate ---
   useEffect(() => {
     if (invoice) {
       // Backend returns camelCase from serializer's to_representation
@@ -174,8 +172,8 @@ export default function InvoiceForm({
         discount: parseFloat(invoice.discount) || 0,
         notes: invoice.notes || '',
         paymentType: invoice.paymentType || 'downpayment',
-        poDate: invoice.poDate || '',           // ← ADDED
-        deliveryDate: invoice.deliveryDate || '' // ← ADDED
+        poDate: invoice.poDate || '',
+        deliveryDate: invoice.deliveryDate || ''
       });
       // Try to find matching client
       const matchingClient = clients.find(c => c.name === invoice.companyName);
@@ -195,8 +193,8 @@ export default function InvoiceForm({
         discount: 0,
         notes: '',
         paymentType: 'downpayment',
-        poDate: '',        // ← ADDED
-        deliveryDate: ''   // ← ADDED
+        poDate: '',
+        deliveryDate: ''
       });
       setSelectedClientId('');
       setSelectedQuotationId('');
@@ -240,7 +238,6 @@ export default function InvoiceForm({
 
   const handleSubmit = () => {
     const { subtotal, grandTotal } = calculateTotals();
-    // --- STEP 5: Add poDate and deliveryDate to onSave payload ---
     onSave({
       billingNumber: formData.billingNumber,
       companyName: formData.companyName,
@@ -249,6 +246,7 @@ export default function InvoiceForm({
       companyEmail: formData.clientEmail || '',
       companyPhone: formData.contactNumber || '',
       companyAddress: formData.address || '',
+      attentionPerson: formData.attentionPerson || '',   // ← ADDED
       subtotal: subtotal,
       taxRate: 0,
       taxAmount: 0,
@@ -259,8 +257,8 @@ export default function InvoiceForm({
       status: 'Pending',
       sourceQuotationId: selectedQuotationId || invoice?.sourceQuotationId || null,
       paymentType: formData.paymentType,
-      poDate: formData.poDate,              // ← ADDED
-      deliveryDate: formData.deliveryDate,  // ← ADDED
+      poDate: formData.poDate,
+      deliveryDate: formData.deliveryDate,
       items: formData.items.map(item => ({
         description: item.description,
         quantity: item.quantity,
@@ -309,7 +307,7 @@ export default function InvoiceForm({
             </div>
           </div>
 
-          {/* --- STEP 5: Add PO Date and Delivery Date input fields --- */}
+          {/* PO Date and Delivery Date */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>PO Date</Label>
@@ -355,9 +353,11 @@ export default function InvoiceForm({
             </div>
           </div>
 
-          {/* Client Selection */}
+          {/* Client Information */}
           <div className="space-y-4 p-4 neu-inset rounded-xl">
             <Label className="text-base font-semibold">Client Information</Label>
+            
+            {/* Auto-fill from quotation (only for new invoices) */}
             {isEditable && !invoice && (
               <div>
                 <Label>Auto-fill From Approved Quotation</Label>
@@ -381,9 +381,11 @@ export default function InvoiceForm({
                 </Select>
               </div>
             )}
-            {isEditable && !invoice ? (
+
+            {/* Client Select - Always shown in edit mode */}
+            {isEditable && (
               <div>
-                <Label>Select Client *</Label>
+                <Label>{invoice ? 'Client (select to refresh from client record)' : 'Select Client *'}</Label>
                 <Select value={selectedClientId} onValueChange={handleClientSelect}>
                   <SelectTrigger className="mt-1 neu-inset border-0 shadow-none">
                     <SelectValue placeholder="Choose a client..." />
@@ -403,33 +405,59 @@ export default function InvoiceForm({
                   </SelectContent>
                 </Select>
               </div>
-            ) : (
+            )}
+
+            {/* Company Name - Editable input */}
+            {formData.companyName && (
               <div>
-                <Label>Client</Label>
-                <div className="mt-1 p-3 neu-inset rounded-xl">
-                  <p className="font-medium">{formData.companyName || 'No client selected'}</p>
-                </div>
+                <Label>Company Name</Label>
+                <Input
+                  value={formData.companyName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+                  className="mt-1"
+                  disabled={!isEditable}
+                />
               </div>
             )}
 
-            {/* Display client details if selected */}
+            {/* Client Details - Editable inputs */}
             {formData.companyName && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div>
                   <Label className="text-xs text-slate-500">Contact Person</Label>
-                  <p className="mt-1 text-slate-900">{formData.attentionPerson || '-'}</p>
+                  <Input
+                    value={formData.attentionPerson}
+                    onChange={(e) => setFormData(prev => ({ ...prev, attentionPerson: e.target.value }))}
+                    className="mt-1"
+                    disabled={!isEditable}
+                  />
                 </div>
                 <div>
                   <Label className="text-xs text-slate-500">Phone</Label>
-                  <p className="mt-1 text-slate-900">{formData.contactNumber || '-'}</p>
+                  <Input
+                    value={formData.contactNumber}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contactNumber: e.target.value }))}
+                    className="mt-1"
+                    disabled={!isEditable}
+                  />
                 </div>
                 <div>
                   <Label className="text-xs text-slate-500">Email</Label>
-                  <p className="mt-1 text-slate-900">{formData.clientEmail || '-'}</p>
+                  <Input
+                    value={formData.clientEmail}
+                    onChange={(e) => setFormData(prev => ({ ...prev, clientEmail: e.target.value }))}
+                    className="mt-1"
+                    disabled={!isEditable}
+                  />
                 </div>
                 <div>
                   <Label className="text-xs text-slate-500">Address</Label>
-                  <p className="mt-1 text-slate-900">{formData.address || '-'}</p>
+                  <Input
+                    value={formData.address}
+                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                    className="mt-1"
+                    disabled={!isEditable}
+                  />
                 </div>
               </div>
             )}
@@ -572,7 +600,6 @@ export default function InvoiceForm({
                     variant="outline"
                     onClick={() => {
                       const { subtotal, grandTotal } = calculateTotals();
-                      // --- STEP 5: Add poDate and deliveryDate to onSaveAsDraft payload ---
                       onSaveAsDraft({
                         billingNumber: formData.billingNumber,
                         companyName: formData.companyName,
@@ -581,6 +608,7 @@ export default function InvoiceForm({
                         companyEmail: formData.clientEmail || '',
                         companyPhone: formData.contactNumber || '',
                         companyAddress: formData.address || '',
+                        attentionPerson: formData.attentionPerson || '',   // ← ADDED
                         subtotal: subtotal,
                         taxRate: 0,
                         taxAmount: 0,
@@ -591,8 +619,8 @@ export default function InvoiceForm({
                         status: 'Pending',
                         sourceQuotationId: selectedQuotationId || invoice?.sourceQuotationId || null,
                         paymentType: formData.paymentType,
-                        poDate: formData.poDate,              // ← ADDED
-                        deliveryDate: formData.deliveryDate,  // ← ADDED
+                        poDate: formData.poDate,
+                        deliveryDate: formData.deliveryDate,
                         items: formData.items.map(item => ({
                           description: item.description,
                           quantity: item.quantity,

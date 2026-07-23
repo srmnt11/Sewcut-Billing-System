@@ -34,7 +34,7 @@ class BillingSerializer(serializers.ModelSerializer):
         model = Billing
         fields = ['id', 'billing_number', 'client', 'company_name', 'billing_date', 
                   'due_date', 'po_date', 'delivery_date', 'company_email', 'company_phone', 
-                  'company_address', 'subtotal', 'tax_rate', 'tax_amount', 'discount', 
+                  'company_address', 'attention_person', 'subtotal', 'tax_rate', 'tax_amount', 'discount', 
                   'grand_total', 'notes', 'terms', 'status', 'payment_type',
                   'source_quotation', 'items', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
@@ -53,6 +53,7 @@ class BillingSerializer(serializers.ModelSerializer):
             'companyEmail': data['company_email'],
             'companyPhone': data['company_phone'],
             'companyAddress': data['company_address'],
+            'attentionPerson': data['attention_person'],
             'subtotal': str(data['subtotal']),
             'taxRate': str(data['tax_rate']),
             'taxAmount': str(data['tax_amount']),
@@ -80,6 +81,7 @@ class BillingSerializer(serializers.ModelSerializer):
             'company_email': data.get('companyEmail', ''),
             'company_phone': data.get('companyPhone', ''),
             'company_address': data.get('companyAddress', ''),
+            'attention_person': data.get('attentionPerson', ''),
             'subtotal': data.get('subtotal', 0),
             'tax_rate': data.get('taxRate', 0),
             'tax_amount': data.get('taxAmount', 0),

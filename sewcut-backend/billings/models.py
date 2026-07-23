@@ -37,6 +37,7 @@ class Billing(models.Model):
     company_email = models.EmailField(blank=True)
     company_phone = models.CharField(max_length=20, blank=True)
     company_address = models.TextField(blank=True)
+    attention_person = models.CharField(max_length=255, blank=True)
     
     # Amounts
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
