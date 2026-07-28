@@ -1,5 +1,14 @@
 from rest_framework import serializers
 from .models import Billing, BillingItem
+from decimal import Decimal, ROUND_HALF_UP
+
+
+def _round2(value):
+    """Round a value to 2 decimal places using ROUND_HALF_UP"""
+    try:
+        return Decimal(str(value)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+    except (ValueError, TypeError):
+        return Decimal('0.00')
 
 
 class BillingItemSerializer(serializers.ModelSerializer):
@@ -34,9 +43,9 @@ class BillingSerializer(serializers.ModelSerializer):
         model = Billing
         fields = ['id', 'billing_number', 'client', 'company_name', 'billing_date', 
                   'due_date', 'po_date', 'delivery_date', 'company_email', 'company_phone', 
-                  'company_address', 'attention_person', 'subtotal', 'tax_rate', 'tax_amount', 'discount', 
-                  'grand_total', 'notes', 'terms', 'status', 'payment_type',
-                  'source_quotation', 'items', 'created_at', 'updated_at']
+                  'company_address', 'attention_person', 'subtotal', 'tax_rate', 'tax_amount', 
+                  'discount', 'vat_inclusive', 'grand_total', 'notes', 'terms', 'status', 
+                  'payment_type', 'source_quotation', 'items', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
     def to_representation(self, instance):
@@ -58,6 +67,7 @@ class BillingSerializer(serializers.ModelSerializer):
             'taxRate': str(data['tax_rate']),
             'taxAmount': str(data['tax_amount']),
             'discount': str(data['discount']),
+            'vatInclusive': data['vat_inclusive'],  # Add this line
             'grandTotal': str(data['grand_total']),
             'notes': data['notes'],
             'terms': data['terms'],
@@ -70,6 +80,11 @@ class BillingSerializer(serializers.ModelSerializer):
         }
 
     def to_internal_value(self, data):
+        # Round all monetary values to 2 decimal places
+        subtotal = _round2(data.get('subtotal', 0))
+        tax_amount = _round2(data.get('taxAmount', 0))
+        grand_total = _round2(data.get('grandTotal', 0))
+        
         internal = {
             'billing_number': data.get('billingNumber'),
             'client': data.get('client'),
@@ -82,11 +97,12 @@ class BillingSerializer(serializers.ModelSerializer):
             'company_phone': data.get('companyPhone', ''),
             'company_address': data.get('companyAddress', ''),
             'attention_person': data.get('attentionPerson', ''),
-            'subtotal': data.get('subtotal', 0),
+            'subtotal': subtotal,
             'tax_rate': data.get('taxRate', 0),
-            'tax_amount': data.get('taxAmount', 0),
+            'tax_amount': tax_amount,
             'discount': data.get('discount', 0),
-            'grand_total': data.get('grandTotal', 0),
+            'vat_inclusive': data.get('vatInclusive', False),  # Add this line
+            'grand_total': grand_total,
             'notes': data.get('notes', ''),
             'terms': data.get('terms', ''),
             'status': data.get('status', 'Draft'),

@@ -222,8 +222,12 @@ def generate_invoice_pdf(billing):
     totals = [
         ['', Paragraph('Subtotal', st_tot_l), Paragraph(f'{PESO}{float(billing.subtotal):,.2f}', st_tot_v)],
     ]
-    if hasattr(billing, 'tax_amount') and billing.tax_amount:
-        totals.append(['', Paragraph('Tax', st_tot_l), Paragraph(f'{PESO}{float(billing.tax_amount):,.2f}', st_tot_v)])
+    
+    # VAT label conditional based on vat_inclusive flag
+    if billing.tax_amount:
+        label = 'VAT (12%) — Inclusive' if billing.vat_inclusive else 'VAT (12%)'
+        totals.append(['', Paragraph(label, st_tot_l), Paragraph(f'{PESO}{float(billing.tax_amount):,.2f}', st_tot_v)])
+    
     totals.append(['', Paragraph('Grand Total', st_grand_l), Paragraph(f'{PESO}{float(billing.grand_total):,.2f}', st_grand_v)])
     tt = Table(totals, colWidths=tc)
     tt.setStyle(TableStyle([

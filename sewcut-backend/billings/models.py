@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth import get_user_model
 from clients.models import Client
@@ -45,6 +46,9 @@ class Billing(models.Model):
     tax_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     grand_total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    # VAT Mode Flag
+    vat_inclusive = models.BooleanField(default=False)  # True = prices include VAT, False = VAT added on top
     
     # Additional Info
     notes = models.TextField(blank=True)
@@ -73,9 +77,15 @@ class Billing(models.Model):
 
     def calculate_totals(self):
         """Calculate all totals based on line items"""
-        self.subtotal = sum(item.total for item in self.items.all())
-        self.tax_amount = (self.subtotal * self.tax_rate) / 100
-        self.grand_total = self.subtotal + self.tax_amount - self.discount
+        items_total = sum(item.total for item in self.items.all())
+        if self.vat_inclusive:
+            self.subtotal = items_total / Decimal('1.12')
+            self.tax_amount = items_total - self.subtotal
+            self.grand_total = items_total
+        else:
+            self.subtotal = items_total
+            self.tax_amount = (self.subtotal * self.tax_rate) / 100
+            self.grand_total = self.subtotal + self.tax_amount - self.discount
         self.save()
 
 

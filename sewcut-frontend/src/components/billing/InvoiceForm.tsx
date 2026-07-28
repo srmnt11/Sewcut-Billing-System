@@ -46,6 +46,7 @@ export default function InvoiceForm({
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [selectedQuotationId, setSelectedQuotationId] = useState<string>('');
   const [isAutofilling, setIsAutofilling] = useState(false);
+  const [vatMode, setVatMode] = useState<'none' | 'exclusive' | 'inclusive'>('none');
 
   type QuotationAutofillSource = {
     id: string;
@@ -175,6 +176,14 @@ export default function InvoiceForm({
         poDate: invoice.poDate || '',
         deliveryDate: invoice.deliveryDate || ''
       });
+      
+      // Load VAT state when editing existing invoice
+      setVatMode(
+        parseFloat(invoice.taxRate) > 0
+          ? (invoice.vatInclusive ? 'inclusive' : 'exclusive')
+          : 'none'
+      );
+      
       // Try to find matching client
       const matchingClient = clients.find(c => c.name === invoice.companyName);
       if (matchingClient) {
@@ -198,6 +207,7 @@ export default function InvoiceForm({
       });
       setSelectedClientId('');
       setSelectedQuotationId('');
+      setVatMode('none');
     }
   }, [invoice, open, clients, nextNumberData]);
 
@@ -229,15 +239,29 @@ export default function InvoiceForm({
   };
 
   const calculateTotals = () => {
-    const subtotal = formData.items.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
-    const grandTotal = subtotal;
-    const downpayment = grandTotal * 0.5; // 50% downpayment
+    const itemsSum = formData.items.reduce((sum, item) => sum + (item.lineTotal || 0), 0);
+
+    let subtotal = itemsSum;
+    let taxAmount = 0;
+    let grandTotal = itemsSum;
+
+    if (vatMode === 'exclusive') {
+      taxAmount = Math.round(itemsSum * 0.12 * 100) / 100;
+      grandTotal = Math.round((itemsSum + taxAmount) * 100) / 100;
+    } else if (vatMode === 'inclusive') {
+      subtotal = Math.round((itemsSum / 1.12) * 100) / 100;
+      taxAmount = Math.round((itemsSum - subtotal) * 100) / 100;
+      grandTotal = itemsSum; // already clean, entered directly
+    }
+
+    const taxRate = vatMode === 'none' ? 0 : 12;
+    const downpayment = grandTotal * 0.5;
     const remainingBalance = grandTotal - downpayment;
-    return { subtotal, grandTotal, downpayment, remainingBalance };
+    return { subtotal, taxRate, taxAmount, grandTotal, downpayment, remainingBalance, vatInclusive: vatMode === 'inclusive' };
   };
 
   const handleSubmit = () => {
-    const { subtotal, grandTotal } = calculateTotals();
+    const { subtotal, taxRate, taxAmount, grandTotal, vatInclusive } = calculateTotals();
     onSave({
       billingNumber: formData.billingNumber,
       companyName: formData.companyName,
@@ -246,12 +270,13 @@ export default function InvoiceForm({
       companyEmail: formData.clientEmail || '',
       companyPhone: formData.contactNumber || '',
       companyAddress: formData.address || '',
-      attentionPerson: formData.attentionPerson || '',   // ← ADDED
+      attentionPerson: formData.attentionPerson || '',
       subtotal: subtotal,
-      taxRate: 0,
-      taxAmount: 0,
+      taxRate: taxRate,
+      taxAmount: taxAmount,
       discount: 0,
       grandTotal: grandTotal,
+      vatInclusive: vatInclusive,
       notes: formData.notes || '',
       terms: '',
       status: 'Pending',
@@ -268,7 +293,7 @@ export default function InvoiceForm({
     });
   };
 
-  const { subtotal, grandTotal, downpayment, remainingBalance } = calculateTotals();
+  const { subtotal, taxRate, taxAmount, grandTotal, downpayment, remainingBalance } = calculateTotals();
   
   const isEditable = !invoice || isEditingDraft || Boolean(invoice);
 
@@ -331,7 +356,7 @@ export default function InvoiceForm({
             </div>
           </div>
 
-          {/* Payment Type */}
+          {/* Payment Type and VAT Dropdown */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>Payment Type</Label>
@@ -348,6 +373,25 @@ export default function InvoiceForm({
                 <SelectContent>
                   <SelectItem value="downpayment">50% Downpayment</SelectItem>
                   <SelectItem value="full">Full Payment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* VAT Dropdown */}
+            <div>
+              <Label>VAT</Label>
+              <Select 
+                value={vatMode} 
+                onValueChange={(v: 'none' | 'exclusive' | 'inclusive') => setVatMode(v)} 
+                disabled={!isEditable}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No VAT</SelectItem>
+                  <SelectItem value="exclusive">Add VAT (12%) on top</SelectItem>
+                  <SelectItem value="inclusive">Prices already include VAT (12%)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -543,9 +587,16 @@ export default function InvoiceForm({
           <div className="neu-surface-soft text-slate-700 rounded-2xl p-6">
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-slate-500">Subtotal</span>
+                <span className="text-slate-500">{vatMode === 'inclusive' ? 'Net of VAT' : 'Subtotal'}</span>
                 <span className="text-slate-800 font-semibold">₱{subtotal.toFixed(2)}</span>
               </div>
+
+              {vatMode !== 'none' && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">VAT (12%)</span>
+                  <span className="text-slate-800 font-semibold">₱{taxAmount.toFixed(2)}</span>
+                </div>
+              )}
 
               <div className="border-t border-white/60 pt-2 mt-2">
                 <div className="flex justify-between text-xl font-bold text-slate-800">
@@ -599,7 +650,7 @@ export default function InvoiceForm({
                   <Button 
                     variant="outline"
                     onClick={() => {
-                      const { subtotal, grandTotal } = calculateTotals();
+                      const { subtotal, taxRate, taxAmount, grandTotal, vatInclusive } = calculateTotals();
                       onSaveAsDraft({
                         billingNumber: formData.billingNumber,
                         companyName: formData.companyName,
@@ -608,12 +659,13 @@ export default function InvoiceForm({
                         companyEmail: formData.clientEmail || '',
                         companyPhone: formData.contactNumber || '',
                         companyAddress: formData.address || '',
-                        attentionPerson: formData.attentionPerson || '',   // ← ADDED
+                        attentionPerson: formData.attentionPerson || '',
                         subtotal: subtotal,
-                        taxRate: 0,
-                        taxAmount: 0,
+                        taxRate: taxRate,
+                        taxAmount: taxAmount,
                         discount: 0,
                         grandTotal: grandTotal,
+                        vatInclusive: vatInclusive,
                         notes: formData.notes || '',
                         terms: '',
                         status: 'Pending',
