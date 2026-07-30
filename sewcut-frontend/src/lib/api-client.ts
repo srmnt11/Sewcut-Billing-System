@@ -18,8 +18,13 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = getToken();
+  const isFormData = options.body instanceof FormData;
+
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    // Only set Content-Type for JSON bodies — for FormData, the browser
+    // must set its own header (including the multipart boundary), so
+    // we deliberately omit it here.
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
@@ -40,7 +45,7 @@ async function apiRequest<T>(
     if (refreshResponse.ok) {
       const { access } = await refreshResponse.json();
       setTokens(access, getRefreshToken()!);
-      
+
       // Retry original request with new token
       response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
@@ -64,7 +69,7 @@ async function apiRequest<T>(
     console.error('Status Text:', response.statusText);
     console.error('Error Object:', error);
     console.error('Error JSON:', JSON.stringify(error, null, 2));
-    
+
     const apiError: any = new Error(error.message || `HTTP ${response.status}`);
     apiError.response = { data: error, status: response.status };
     throw apiError;
@@ -85,17 +90,17 @@ function createCrudApi<T>(baseEndpoint: string) {
       const url = sort ? `${baseEndpoint}?_sort=${sort}` : baseEndpoint;
       return apiRequest<T[]>(url);
     },
-    get: (id: string | number) => 
+    get: (id: string | number) =>
       apiRequest<T>(`${baseEndpoint}${id}/`),
-    create: (data: Partial<T>) =>
+    create: (data: Partial<T> | FormData) =>
       apiRequest<T>(baseEndpoint, {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: data instanceof FormData ? data : JSON.stringify(data),
       }),
-    update: (id: string | number, data: Partial<T>) =>
+    update: (id: string | number, data: Partial<T> | FormData) =>
       apiRequest<T>(`${baseEndpoint}${id}/`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: data instanceof FormData ? data : JSON.stringify(data),
       }),
     delete: (id: string | number) =>
       apiRequest<void>(`${baseEndpoint}${id}/`, {
@@ -126,15 +131,15 @@ export const api = {
     },
     currentUser: () => apiRequest('/api/auth/me/'),
   },
-  
+
   // Generic GET/POST methods for custom endpoints
   get: (endpoint: string) => apiRequest(endpoint),
   post: (endpoint: string, data: any) =>
     apiRequest(endpoint, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
     }),
-  
+
   entities: {
     Client: createCrudApi('/api/clients/'),
     Supplier: createCrudApi('/api/suppliers/'),
@@ -144,7 +149,7 @@ export const api = {
     User: createCrudApi('/api/auth/users/'),
     Draft: createCrudApi('/api/drafts/'),
   },
-  
+
   analytics: {
     dashboard: () => apiRequest('/api/analytics/dashboard/'),
     revenueChart: () => apiRequest('/api/analytics/revenue-chart/'),

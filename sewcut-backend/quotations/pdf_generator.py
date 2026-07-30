@@ -9,6 +9,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from datetime import datetime
 from reportlab.platypus import Image as RLImage
+from reportlab.lib.utils import ImageReader
 import os
 
 # ---------- font helpers ----------
@@ -31,6 +32,32 @@ def _get_logo_image(width=0.65*inch, height=0.65*inch):
             img.hAlign = 'LEFT'
             return img
     return None
+
+def _load_field_image(image_field, max_width, max_height):
+    """Load a Django ImageField into a sized RLImage. Works with local
+    storage or remote backends (S3, etc.) since it reads via .open()/.read()
+    instead of assuming a local .path."""
+    if not image_field:
+        return None
+    try:
+        image_field.open('rb')
+        data = image_field.read()
+        image_field.close()
+    except Exception:
+        return None
+
+    try:
+        reader = ImageReader(BytesIO(data))
+        iw, ih = reader.getSize()
+        if iw <= 0 or ih <= 0:
+            return None
+        ratio = min(max_width / iw, max_height / ih, 1.0)
+        w, h = iw * ratio, ih * ratio
+        img = RLImage(BytesIO(data), width=w, height=h)
+        img.hAlign = 'CENTER'
+        return img
+    except Exception:
+        return None
 
 def _register_font():
     global _FONT_REGISTERED, _FONT_FAMILY, _FONT_BOLD, PESO
@@ -301,6 +328,15 @@ def generate_quotation_pdf(quotation):
     it.setStyle(TableStyle(sty))
     elements.append(it)
     elements.append(Spacer(1, 0.25 * inch))
+
+    # ==== REFERENCE PHOTO (new) ====
+    ref_img = _load_field_image(getattr(quotation, 'reference_image', None),
+                                 max_width=2.5 * inch, max_height=2.5 * inch)
+    if ref_img:
+        elements.append(Paragraph('REFERENCE PHOTO', st_section))
+        elements.append(Spacer(1, 0.1 * inch))
+        elements.append(ref_img)
+        elements.append(Spacer(1, 0.25 * inch))
 
     # ==== TOTALS ====
     tc = [W * 0.56, W * 0.22, W * 0.22]

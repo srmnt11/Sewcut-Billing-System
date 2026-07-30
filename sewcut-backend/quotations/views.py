@@ -1,4 +1,5 @@
 from rest_framework import viewsets, permissions
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.decorators import action, api_view, permission_classes as drf_permission_classes
 from rest_framework.response import Response
 from .models import Quotation
@@ -9,7 +10,6 @@ import re
 @api_view(['GET'])
 @drf_permission_classes([permissions.IsAuthenticated])
 def get_next_quotation_number(request):
-    """Return the next sequential quotation number."""
     last = Quotation.objects.order_by('-id').first()
     next_num = 1
     if last and last.quotation_number:
@@ -26,6 +26,7 @@ class QuotationViewSet(viewsets.ModelViewSet):
     queryset = Quotation.objects.all()
     serializer_class = QuotationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]  # NEW
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)

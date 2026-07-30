@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Save, X, FileCheck, FileText, Mail } from 'lucide-react';
+import { Plus, Trash2, Save, X, FileCheck, FileText, Mail, ImagePlus, X as XIcon, Loader2, AlertCircle } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { api } from '@/lib/api-client';
 
@@ -38,6 +38,7 @@ type Quotation = {
   status: string;
   items: Item[];
   notes?: string;
+  referenceImage?: string;
   [key: string]: any;
 };
 
@@ -61,6 +62,10 @@ export default function QuotationForm({
   isLoading = false 
 }: QuotationFormProps) {
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
+  const [referenceImagePreview, setReferenceImagePreview] = useState<string>('');
+  const [isImageUploading, setIsImageUploading] = useState(false);
+  const [showDraftWarning, setShowDraftWarning] = useState(false);
 
   const { data: nextNumberData } = useQuery<{ number: string }>({
     queryKey: ['quotation-next-number'],
@@ -97,6 +102,11 @@ export default function QuotationForm({
         coverLetterAddress: (quotation as any).coverLetterAddress || '',
         coverLetterBody: (quotation as any).coverLetterBody || 'As requested, I am pleased to enclose our quotation for the below goods. Should you have any questions or require further information, please do not hesitate to contact us.',
       });
+      
+      // Seed the reference image preview if it exists
+      setReferenceImagePreview((quotation as any).referenceImage || '');
+      setReferenceImageFile(null);
+      
       const matchingClient = clients.find(c => c.name === quotation.companyName);
       if (matchingClient) {
         setSelectedClientId(String(matchingClient.id || matchingClient._id || ''));
@@ -116,47 +126,59 @@ export default function QuotationForm({
         coverLetterBody: 'As requested, I am pleased to enclose our quotation for the below goods. Should you have any questions or require further information, please do not hesitate to contact us.',
       });
       setSelectedClientId('');
+      setReferenceImageFile(null);
+      setReferenceImagePreview('');
+      setShowDraftWarning(false);
     }
   }, [quotation, open, clients, nextNumberData]);
 
+  // Clean up object URL when component unmounts or image changes
+  useEffect(() => {
+    return () => {
+      if (referenceImagePreview && referenceImagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(referenceImagePreview);
+      }
+    };
+  }, [referenceImagePreview]);
+
   const handleClientChange = (clientId: string) => {
-  setSelectedClientId(clientId);
+    setSelectedClientId(clientId);
 
-  const client = clients.find(
-    c => String(c.id ?? c._id ?? '') === String(clientId)
-  );
+    const client = clients.find(
+      c => String(c.id ?? c._id ?? '') === String(clientId)
+    );
 
-  if (client) {
-    const resolvedCompanyName =
-      client.name ||
-      client.companyName ||
-      (client as any).company_name ||
-      '';
+    if (client) {
+      const resolvedCompanyName =
+        client.name ||
+        client.companyName ||
+        (client as any).company_name ||
+        '';
 
-    const resolvedContact =
-      client.contactPerson ||
-      (client as any).contact_person ||
-      '';
+      const resolvedContact =
+        client.contactPerson ||
+        (client as any).contact_person ||
+        '';
 
-    const resolvedAddress = [
-      client.address,
-      client.city,
-      client.country,
-    ].filter(Boolean).join(', ');
+      const resolvedAddress = [
+        client.address,
+        client.city,
+        client.country,
+      ].filter(Boolean).join(', ');
 
-    console.log('Selected client:', client, '-> resolved name:', resolvedCompanyName);
+      console.log('Selected client:', client, '-> resolved name:', resolvedCompanyName);
 
-    setFormData(prev => ({
-      ...prev,
-      clientName: resolvedCompanyName,
-      coverLetterCompany: prev.coverLetterCompany || resolvedCompanyName,
-      coverLetterRecipient: prev.coverLetterRecipient || resolvedContact,
-      coverLetterAddress: prev.coverLetterAddress || resolvedAddress,
-    }));
-  } else {
-    console.warn('No matching client found for id:', clientId, 'in', clients);
-  }
-};
+      setFormData(prev => ({
+        ...prev,
+        clientName: resolvedCompanyName,
+        coverLetterCompany: prev.coverLetterCompany || resolvedCompanyName,
+        coverLetterRecipient: prev.coverLetterRecipient || resolvedContact,
+        coverLetterAddress: prev.coverLetterAddress || resolvedAddress,
+      }));
+    } else {
+      console.warn('No matching client found for id:', clientId, 'in', clients);
+    }
+  };
 
   const handleItemChange = (index: number, field: string, value: string | number) => {
     const newItems = [...formData.items];
@@ -191,44 +213,130 @@ export default function QuotationForm({
     return { subtotal, total };
   };
 
-const handleSubmit = () => {
-  if (!formData.clientName?.trim()) {
-    alert('Please select a client before saving — client name is missing.');
-    return;
-  }
-
-  const { subtotal, total } = calculateTotals();
-
-  const submitData = {
-    quotationNumber: formData.quotationNumber,
-    companyName: formData.clientName,
-    quotationDate: format(new Date(), 'yyyy-MM-dd'),
-    validUntil: formData.validUntil,
-    subtotal: subtotal,
-    taxRate: 0,
-    taxAmount: 0,
-    discount: 0,
-    grandTotal: total,
-    notes: formData.notes || '',
-    terms: '',
-    status: formData.status === 'Draft' ? 'Pending' : (formData.status || 'Pending'),
-    coverLetterRecipient: formData.coverLetterRecipient || '',
-    coverLetterRecipientTitle: formData.coverLetterRecipientTitle || '',
-    coverLetterCompany: formData.coverLetterCompany || '',
-    coverLetterAddress: formData.coverLetterAddress || '',
-    coverLetterBody: formData.coverLetterBody || '',
-    items: formData.items.map(item => ({
-      description: item.description,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      total: item.lineTotal
-    }))
+  const handleReferenceImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsImageUploading(true);
+      try {
+        // File validation
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Image size should be less than 5MB.');
+          e.target.value = '';
+          return;
+        }
+        
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+          alert('Please upload a valid image file (JPEG, PNG, GIF, or WebP).');
+          e.target.value = '';
+          return;
+        }
+        
+        // Simulate processing or add actual processing logic
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        setReferenceImageFile(file);
+        setReferenceImagePreview(URL.createObjectURL(file));
+        setShowDraftWarning(false);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        alert('Failed to process image. Please try again.');
+      } finally {
+        setIsImageUploading(false);
+      }
+    }
   };
 
-  onSave(submitData);
-};
+  const removeReferenceImage = () => {
+    if (referenceImagePreview && referenceImagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(referenceImagePreview);
+    }
+    setReferenceImageFile(null);
+    setReferenceImagePreview('');
+    setShowDraftWarning(false);
+  };
+
+  const buildSubmitPayload = () => {
+    const { subtotal, total } = calculateTotals();
+    return {
+      quotationNumber: formData.quotationNumber,
+      companyName: formData.clientName,
+      quotationDate: format(new Date(), 'yyyy-MM-dd'),
+      validUntil: formData.validUntil,
+      subtotal: subtotal,
+      taxRate: 0,
+      taxAmount: 0,
+      discount: 0,
+      grandTotal: total,
+      notes: formData.notes || '',
+      terms: '',
+      status: formData.status === 'Draft' ? 'Pending' : (formData.status || 'Pending'),
+      coverLetterRecipient: formData.coverLetterRecipient || '',
+      coverLetterRecipientTitle: formData.coverLetterRecipientTitle || '',
+      coverLetterCompany: formData.coverLetterCompany || '',
+      coverLetterAddress: formData.coverLetterAddress || '',
+      coverLetterBody: formData.coverLetterBody || '',
+      items: formData.items.map(item => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        total: item.lineTotal
+      }))
+    };
+  };
+
+  const handleSubmit = () => {
+    if (!formData.clientName?.trim()) {
+      alert('Please select a client before saving — client name is missing.');
+      return;
+    }
+
+    const payload = buildSubmitPayload();
+
+    if (referenceImageFile) {
+      const form = new FormData();
+      Object.entries(payload).forEach(([key, value]) => {
+        if (key === 'items') {
+          form.append(key, JSON.stringify(value));
+        } else {
+          form.append(key, String(value ?? ''));
+        }
+      });
+      form.append('referenceImage', referenceImageFile);
+      onSave(form);
+    } else {
+      onSave(payload);
+    }
+  };
+
+  const handleSaveAsDraft = () => {
+    // Check if there's a newly uploaded image that would be lost
+    if (referenceImageFile) {
+      if (!confirm(
+        'You have attached a photo that will not be saved with this draft.\n\n' +
+        'Photos are only preserved when saving as a full quotation.\n\n' +
+        'Continue saving as draft without the photo?'
+      )) {
+        return;
+      }
+    }
+
+    const payload = buildSubmitPayload();
+    onSaveAsDraft?.({
+      ...payload,
+      status: 'Draft',
+      // Only carries an existing image URL forward — a newly
+      // picked file can't be stored in draft_data (plain JSON),
+      // so it uploads only once this draft becomes a real quotation.
+      referenceImage: referenceImagePreview && !referenceImageFile ? referenceImagePreview : '',
+    });
+  };
 
   const { subtotal, total } = calculateTotals();
+
+  // Determine if we should show the draft photo warning
+  const showPhotoWarning = referenceImageFile && !isImageUploading;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -436,6 +544,53 @@ const handleSubmit = () => {
             </div>
           </div>
 
+          {/* Reference Photo */}
+          <div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
+              <ImagePlus className="w-4 h-4 text-slate-400" />
+              Reference Photo
+              <span className="text-xs text-slate-400 font-normal">(shown in the PDF)</span>
+            </div>
+            <div className="mt-1 neu-inset rounded-xl p-4">
+              {isImageUploading ? (
+                <div className="flex items-center gap-3 text-sm text-slate-500">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Processing image...
+                </div>
+              ) : referenceImagePreview ? (
+                <div className="space-y-3">
+                  <div className="relative inline-block">
+                    <img src={referenceImagePreview} alt="Reference" className="max-h-40 rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={removeReferenceImage}
+                      className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 hover:bg-slate-100 transition-colors"
+                    >
+                      <XIcon className="w-4 h-4 text-red-500" />
+                    </button>
+                  </div>
+                  {showPhotoWarning && (
+                    <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">Photo won't be saved with draft</p>
+                        <p className="text-amber-600">
+                          This photo will be lost if you save as draft. Use "Save Quotation" to keep it.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 text-sm text-slate-500 cursor-pointer hover:text-slate-700 transition-colors">
+                  <ImagePlus className="w-4 h-4" />
+                  Attach a photo of the item/sample
+                  <input type="file" accept="image/*" className="hidden" onChange={handleReferenceImageChange} />
+                </label>
+              )}
+            </div>
+          </div>
+
           {/* Totals */}
           <div className="neu-surface-soft text-slate-700 rounded-2xl p-6">
             <div className="space-y-2">
@@ -478,34 +633,7 @@ const handleSubmit = () => {
               {onSaveAsDraft && !quotation?.id && (
                 <Button
                   variant="outline"
-                  onClick={() => {
-                    const { subtotal, total } = calculateTotals();
-                    onSaveAsDraft({
-                      quotationNumber: formData.quotationNumber,
-                      companyName: formData.clientName,
-                      quotationDate: format(new Date(), 'yyyy-MM-dd'),
-                      validUntil: formData.validUntil,
-                      subtotal: subtotal,
-                      taxRate: 0,
-                      taxAmount: 0,
-                      discount: 0,
-                      grandTotal: total,
-                      notes: formData.notes || '',
-                      terms: '',
-                      status: 'Draft',
-                      coverLetterRecipient: formData.coverLetterRecipient || '',
-                      coverLetterRecipientTitle: formData.coverLetterRecipientTitle || '',
-                      coverLetterCompany: formData.coverLetterCompany || '',
-                      coverLetterAddress: formData.coverLetterAddress || '',
-                      coverLetterBody: formData.coverLetterBody || '',
-                      items: formData.items.map(item => ({
-                        description: item.description,
-                        quantity: item.quantity,
-                        unitPrice: item.unitPrice,
-                        total: item.lineTotal
-                      }))
-                    });
-                  }}
+                  onClick={handleSaveAsDraft}
                   disabled={isLoading}
                 >
                   <Save className="w-4 h-4 mr-2" /> Save as Draft
