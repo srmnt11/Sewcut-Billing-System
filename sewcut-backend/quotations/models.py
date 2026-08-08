@@ -38,6 +38,9 @@ class Quotation(models.Model):
     cover_letter_address = models.TextField(blank=True)
     cover_letter_body = models.TextField(blank=True)
 
+    creator_name = models.CharField(max_length=255, blank=True)
+    creator_signature = models.ImageField(upload_to='quotations/signatures/', null=True, blank=True)
+
     # NEW: reference photo for the quoted item(s), shown in the description box of the PDF
     reference_image = models.ImageField(upload_to='quotations/reference_images/', null=True, blank=True)
 

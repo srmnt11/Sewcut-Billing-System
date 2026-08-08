@@ -100,6 +100,41 @@ def generate_quotation_pdf(quotation):
     """Generate a polished, professional PDF quotation."""
     _register_font()
 
+    def _creator_display_name():
+        creator_name = getattr(quotation, 'creator_name', '') or ''
+        if creator_name:
+            return creator_name
+
+        created_by = getattr(quotation, 'created_by', None)
+        if created_by:
+            full_name = created_by.get_full_name().strip()
+            if full_name:
+                return full_name
+            if created_by.username:
+                return created_by.username
+            if created_by.email:
+                return created_by.email
+
+        return 'Prepared by'
+
+    def _add_creator_signature_block(container, align=TA_LEFT):
+            signature = _load_field_image(getattr(quotation, 'creator_signature', None), max_width=1.6 * inch, max_height=0.65 * inch)
+            creator_label = _creator_display_name()
+
+            # Match the signature image's alignment to the surrounding text —
+            # _load_field_image always hardcodes 'CENTER', so we override it here
+            # for whichever side this block is being placed on.
+            align_map = {TA_LEFT: 'LEFT', TA_CENTER: 'CENTER', TA_RIGHT: 'RIGHT'}
+            h_align = align_map.get(align, 'LEFT')
+
+            container.append(Spacer(1, 0.15 * inch))
+            if signature:
+                signature.hAlign = h_align
+                container.append(signature)
+                container.append(Spacer(1, 0.04 * inch))
+            container.append(Paragraph(f'<b>{creator_label}</b>', _s('CN', 11, BRAND_DARK, True, align=align, sa=1)))
+            container.append(Paragraph('Sew-Cut Wearing Apparel Manufacturing', _s('CC', 9, TEXT_MUTED, align=align, sa=2)))
+        
     buffer = BytesIO()
     doc = SimpleDocTemplate(
         buffer, pagesize=letter,
@@ -221,9 +256,7 @@ def generate_quotation_pdf(quotation):
         # Sign-off
         elements.append(Paragraph('Thank you for your time and consideration.', _s('SO1', 10, TEXT_NORMAL, sa=20)))
         elements.append(Paragraph('Sincerely,', _s('SO2', 10, TEXT_NORMAL, sa=24)))
-        elements.append(Paragraph('<b>Josallyn J. Sarmiento</b>', _s('SIG1', 11, BRAND_DARK, True, sa=2)))
-        elements.append(Paragraph('Operations Manager', _s('SIG2', 10, TEXT_MUTED, sa=2)))
-        elements.append(Paragraph('Sew-Cut Wearing Apparel Manufacturing', _s('SIG3', 10, TEXT_MUTED, sa=2)))
+        _add_creator_signature_block(elements)
 
         # Page break before pricing page
         elements.append(PageBreak())
@@ -384,6 +417,9 @@ def generate_quotation_pdf(quotation):
     ], colWidths=[W * 0.28, W * 0.72])
     deposit.setStyle(TableStyle([('VALIGN', (0, 0), (-1, -1), 'TOP'), ('TOPPADDING', (0, 0), (-1, -1), 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 2)]))
     elements.append(deposit)
+
+    if not has_cover:
+        _add_creator_signature_block(elements, align=TA_RIGHT)
 
     # ==== FOOTER ====
     elements.append(Spacer(1, 0.3 * inch))

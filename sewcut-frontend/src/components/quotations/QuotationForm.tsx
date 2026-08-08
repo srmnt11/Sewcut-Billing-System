@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Save, X, FileCheck, FileText, Mail, ImagePlus, X as XIcon, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Save, X, FileCheck, FileText, Mail, ImagePlus, X as XIcon, Loader2, AlertCircle, PenLine } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { api } from '@/lib/api-client';
 
@@ -39,6 +39,8 @@ type Quotation = {
   items: Item[];
   notes?: string;
   referenceImage?: string;
+  creatorName?: string;
+  creatorSignature?: string;
   [key: string]: any;
 };
 
@@ -64,7 +66,11 @@ export default function QuotationForm({
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [referenceImageFile, setReferenceImageFile] = useState<File | null>(null);
   const [referenceImagePreview, setReferenceImagePreview] = useState<string>('');
+  const [referenceImageRemoved, setReferenceImageRemoved] = useState(false); // NEW: tracks intentional deletion
+  const [creatorSignatureFile, setCreatorSignatureFile] = useState<File | null>(null);
+  const [creatorSignaturePreview, setCreatorSignaturePreview] = useState<string>('');
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isSignatureUploading, setIsSignatureUploading] = useState(false);
   const [showDraftWarning, setShowDraftWarning] = useState(false);
 
   const { data: nextNumberData } = useQuery<{ number: string }>({
@@ -86,6 +92,7 @@ export default function QuotationForm({
     coverLetterCompany: '',
     coverLetterAddress: '',
     coverLetterBody: 'As requested, I am pleased to enclose our quotation for the below goods. Should you have any questions or require further information, please do not hesitate to contact us.',
+    creatorName: '',
   });
 
   useEffect(() => {
@@ -101,11 +108,15 @@ export default function QuotationForm({
         coverLetterCompany: (quotation as any).coverLetterCompany || '',
         coverLetterAddress: (quotation as any).coverLetterAddress || '',
         coverLetterBody: (quotation as any).coverLetterBody || 'As requested, I am pleased to enclose our quotation for the below goods. Should you have any questions or require further information, please do not hesitate to contact us.',
+        creatorName: (quotation as any).creatorName || '',
       });
       
       // Seed the reference image preview if it exists
       setReferenceImagePreview((quotation as any).referenceImage || '');
       setReferenceImageFile(null);
+      setReferenceImageRemoved(false); // Reset removal flag when loading quotation
+      setCreatorSignaturePreview((quotation as any).creatorSignature || '');
+      setCreatorSignatureFile(null);
       
       const matchingClient = clients.find(c => c.name === quotation.companyName);
       if (matchingClient) {
@@ -124,10 +135,14 @@ export default function QuotationForm({
         coverLetterCompany: '',
         coverLetterAddress: '',
         coverLetterBody: 'As requested, I am pleased to enclose our quotation for the below goods. Should you have any questions or require further information, please do not hesitate to contact us.',
+        creatorName: '',
       });
       setSelectedClientId('');
       setReferenceImageFile(null);
       setReferenceImagePreview('');
+      setReferenceImageRemoved(false);
+      setCreatorSignatureFile(null);
+      setCreatorSignaturePreview('');
       setShowDraftWarning(false);
     }
   }, [quotation, open, clients, nextNumberData]);
@@ -138,8 +153,11 @@ export default function QuotationForm({
       if (referenceImagePreview && referenceImagePreview.startsWith('blob:')) {
         URL.revokeObjectURL(referenceImagePreview);
       }
+      if (creatorSignaturePreview && creatorSignaturePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(creatorSignaturePreview);
+      }
     };
-  }, [referenceImagePreview]);
+  }, [referenceImagePreview, creatorSignaturePreview]);
 
   const handleClientChange = (clientId: string) => {
     setSelectedClientId(clientId);
@@ -238,6 +256,7 @@ export default function QuotationForm({
         
         setReferenceImageFile(file);
         setReferenceImagePreview(URL.createObjectURL(file));
+        setReferenceImageRemoved(false); // NEW: reset removal flag when new image is uploaded
         setShowDraftWarning(false);
       } catch (error) {
         console.error('Error processing image:', error);
@@ -248,12 +267,54 @@ export default function QuotationForm({
     }
   };
 
+  const handleCreatorSignatureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setIsSignatureUploading(true);
+      try {
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Signature image size should be less than 5MB.');
+          e.target.value = '';
+          return;
+        }
+
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+          alert('Please upload a valid signature image file (JPEG, PNG, GIF, or WebP).');
+          e.target.value = '';
+          return;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        setCreatorSignatureFile(file);
+        setCreatorSignaturePreview(URL.createObjectURL(file));
+        setShowDraftWarning(false);
+      } catch (error) {
+        console.error('Error processing signature image:', error);
+        alert('Failed to process signature image. Please try again.');
+      } finally {
+        setIsSignatureUploading(false);
+      }
+    }
+  };
+
   const removeReferenceImage = () => {
     if (referenceImagePreview && referenceImagePreview.startsWith('blob:')) {
       URL.revokeObjectURL(referenceImagePreview);
     }
     setReferenceImageFile(null);
     setReferenceImagePreview('');
+    setReferenceImageRemoved(true); // NEW: marks this as an intentional deletion
+    setShowDraftWarning(false);
+  };
+
+  const removeCreatorSignature = () => {
+    if (creatorSignaturePreview && creatorSignaturePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(creatorSignaturePreview);
+    }
+    setCreatorSignatureFile(null);
+    setCreatorSignaturePreview('');
     setShowDraftWarning(false);
   };
 
@@ -277,6 +338,9 @@ export default function QuotationForm({
       coverLetterCompany: formData.coverLetterCompany || '',
       coverLetterAddress: formData.coverLetterAddress || '',
       coverLetterBody: formData.coverLetterBody || '',
+      creatorName: formData.creatorName || '',
+      // NEW: send clear signal when removed and no new file was picked
+      ...(referenceImageRemoved && !referenceImageFile ? { referenceImage: '' } : {}),
       items: formData.items.map(item => ({
         description: item.description,
         quantity: item.quantity,
@@ -292,9 +356,19 @@ export default function QuotationForm({
       return;
     }
 
+    if (!formData.creatorName?.trim()) {
+      alert('Please enter the name of the person who created the quotation.');
+      return;
+    }
+
+    if (!creatorSignatureFile && !creatorSignaturePreview) {
+      alert('Please attach an e-signature image for the quotation creator.');
+      return;
+    }
+
     const payload = buildSubmitPayload();
 
-    if (referenceImageFile) {
+    if (referenceImageFile || creatorSignatureFile) {
       const form = new FormData();
       Object.entries(payload).forEach(([key, value]) => {
         if (key === 'items') {
@@ -303,7 +377,12 @@ export default function QuotationForm({
           form.append(key, String(value ?? ''));
         }
       });
-      form.append('referenceImage', referenceImageFile);
+      if (referenceImageFile) {
+        form.append('referenceImage', referenceImageFile);
+      }
+      if (creatorSignatureFile) {
+        form.append('creatorSignature', creatorSignatureFile);
+      }
       onSave(form);
     } else {
       onSave(payload);
@@ -312,10 +391,10 @@ export default function QuotationForm({
 
   const handleSaveAsDraft = () => {
     // Check if there's a newly uploaded image that would be lost
-    if (referenceImageFile) {
+    if (referenceImageFile || creatorSignatureFile) {
       if (!confirm(
-        'You have attached a photo that will not be saved with this draft.\n\n' +
-        'Photos are only preserved when saving as a full quotation.\n\n' +
+        'You have attached media that will not be saved with this draft.\n\n' +
+        'Images are only preserved when saving as a full quotation.\n\n' +
         'Continue saving as draft without the photo?'
       )) {
         return;
@@ -330,6 +409,7 @@ export default function QuotationForm({
       // picked file can't be stored in draft_data (plain JSON),
       // so it uploads only once this draft becomes a real quotation.
       referenceImage: referenceImagePreview && !referenceImageFile ? referenceImagePreview : '',
+      creatorSignature: creatorSignaturePreview && !creatorSignatureFile ? creatorSignaturePreview : '',
     });
   };
 
@@ -470,6 +550,58 @@ export default function QuotationForm({
                     className="border-0 bg-transparent shadow-none p-0 mt-1"
                     rows={3}
                   />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Creator Signature */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <PenLine className="w-4 h-4 text-slate-500" />
+              <Label className="text-base font-semibold">Quotation Creator</Label>
+              <span className="text-xs text-slate-400">(printed on the PDF sign-off)</span>
+            </div>
+            <div className="space-y-3 p-4 neu-inset rounded-xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-slate-500">Creator Name</Label>
+                  <Input
+                    placeholder="Enter the name to print on the quotation"
+                    value={formData.creatorName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, creatorName: e.target.value }))}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500">Signature Image</Label>
+                  <div className="mt-1 neu-inset rounded-xl p-4">
+                    {isSignatureUploading ? (
+                      <div className="flex items-center gap-3 text-sm text-slate-500">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Processing signature...
+                      </div>
+                    ) : creatorSignaturePreview ? (
+                      <div className="space-y-3">
+                        <div className="relative inline-block">
+                          <img src={creatorSignaturePreview} alt="Signature" className="max-h-24 rounded-lg bg-white p-2" />
+                          <button
+                            type="button"
+                            onClick={removeCreatorSignature}
+                            className="absolute -top-2 -right-2 bg-white rounded-full shadow p-1 hover:bg-slate-100 transition-colors"
+                          >
+                            <XIcon className="w-4 h-4 text-red-500" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex items-center gap-2 text-sm text-slate-500 cursor-pointer hover:text-slate-700 transition-colors">
+                        <ImagePlus className="w-4 h-4" />
+                        Attach an e-signature image
+                        <input type="file" accept="image/*" className="hidden" onChange={handleCreatorSignatureChange} />
+                      </label>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
