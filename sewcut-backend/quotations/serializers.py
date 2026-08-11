@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Quotation, QuotationItem
+from django.core.files.uploadedfile import UploadedFile
 import json
 
 class QuotationItemSerializer(serializers.ModelSerializer):
@@ -84,44 +85,57 @@ class QuotationSerializer(serializers.ModelSerializer):
         }
 
     def to_internal_value(self, data):
-        internal = {
-            'quotation_number': data.get('quotationNumber'),
-            'client': data.get('client'),
-            'company_name': data.get('companyName'),
-            'quotation_date': data.get('quotationDate'),
-            'valid_until': data.get('validUntil'),
-            'subtotal': data.get('subtotal', 0),
-            'tax_rate': data.get('taxRate', 0),
-            'tax_amount': data.get('taxAmount', 0),
-            'discount': data.get('discount', 0),
-            'grand_total': data.get('grandTotal', 0),
-            'notes': data.get('notes', ''),
-            'terms': data.get('terms', ''),
-            'status': data.get('status', 'Draft'),
-            'cover_letter_recipient': data.get('coverLetterRecipient', ''),
-            'cover_letter_recipient_title': data.get('coverLetterRecipientTitle', ''),
-            'cover_letter_company': data.get('coverLetterCompany', ''),
-            'cover_letter_address': data.get('coverLetterAddress', ''),
-            'cover_letter_body': data.get('coverLetterBody', ''),
+        internal = {}
+
+        field_map = {
+            'quotationNumber': 'quotation_number',
+            'client': 'client',
+            'companyName': 'company_name',
+            'quotationDate': 'quotation_date',
+            'validUntil': 'valid_until',
+            'subtotal': 'subtotal',
+            'taxRate': 'tax_rate',
+            'taxAmount': 'tax_amount',
+            'discount': 'discount',
+            'grandTotal': 'grand_total',
+            'notes': 'notes',
+            'terms': 'terms',
+            'status': 'status',
+            'coverLetterRecipient': 'cover_letter_recipient',
+            'coverLetterRecipientTitle': 'cover_letter_recipient_title',
+            'coverLetterCompany': 'cover_letter_company',
+            'coverLetterAddress': 'cover_letter_address',
+            'coverLetterBody': 'cover_letter_body',
         }
+        for incoming_key, model_key in field_map.items():
+            if incoming_key in data:
+                internal[model_key] = data.get(incoming_key)
+
         if 'creatorName' in data:
             internal['creator_name'] = data.get('creatorName', '')
-        # Only touch reference_image if the key was actually sent — otherwise
-        # a JSON update without a file would wipe out the existing image.
+        # Only touch reference_image/creator_signature if the key was actually sent —
+        # otherwise a JSON-only update would wipe out the existing image.
         if 'creatorSignature' in data:
-            internal['creator_signature'] = data.get('creatorSignature')
+            sig_val = data.get('creatorSignature')
+            if isinstance(sig_val, UploadedFile):
+                internal['creator_signature'] = sig_val
+            # else: a URL string echoed back — not a new upload, leave untouched.
         if 'referenceImage' in data:
-            # Handle the case where the reference image is explicitly set to null
             ref_val = data.get('referenceImage')
-            internal['reference_image'] = None if ref_val in ('', None, 'null') else ref_val
+            if isinstance(ref_val, UploadedFile):
+                internal['reference_image'] = ref_val
+            elif ref_val in ('', None, 'null'):
+                internal['reference_image'] = None
+            # else: a URL string — leave the existing reference image alone.
         if 'items' in data:
-                    raw_items = data['items']
-                    if isinstance(raw_items, str):
-                        try:
-                            raw_items = json.loads(raw_items)
-                        except (ValueError, TypeError):
-                            raw_items = []
-                    internal['items'] = raw_items
+            raw_items = data['items']
+            if isinstance(raw_items, str):
+                try:
+                    raw_items = json.loads(raw_items)
+                except (ValueError, TypeError):
+                    raw_items = []
+            internal['items'] = raw_items
+
         return super().to_internal_value(internal)
 
     def create(self, validated_data):

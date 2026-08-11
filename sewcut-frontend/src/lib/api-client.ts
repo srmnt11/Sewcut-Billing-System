@@ -99,7 +99,7 @@ function createCrudApi<T>(baseEndpoint: string) {
       }),
     update: (id: string | number, data: Partial<T> | FormData) =>
       apiRequest<T>(`${baseEndpoint}${id}/`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: data instanceof FormData ? data : JSON.stringify(data),
       }),
     delete: (id: string | number) =>
