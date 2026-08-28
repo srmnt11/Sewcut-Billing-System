@@ -123,7 +123,9 @@ export function Analytics() {
 
       const revenue = monthInvoices.reduce((sum, inv) => {
         const amount = parseFloat(inv.grandTotal) || 0;
-        if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+        const paymentType = inv.paymentType || 'downpayment';
+        if (inv.status === 'Paid') return sum + amount;
+        if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
         if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
         return sum;
       }, 0);
@@ -162,8 +164,10 @@ export function Analytics() {
     const clientRevenue: Record<string, number> = {};
     filteredInvoices.forEach(inv => {
       const amount = parseFloat(inv.grandTotal) || 0;
+      const paymentType = inv.paymentType || 'downpayment';
       let revenue = 0;
-      if (inv.status === 'Paid' || inv.status === 'Delivered') revenue = amount;
+      if (inv.status === 'Paid') revenue = amount;
+      else if (inv.status === 'Delivered') revenue = paymentType === 'downpayment' ? amount * 0.5 : 0;
       else if (inv.status === 'Partial Payment') revenue = amount * 0.5;
       if (revenue > 0) {
         clientRevenue[inv.companyName] = (clientRevenue[inv.companyName] || 0) + revenue;
@@ -192,11 +196,12 @@ export function Analytics() {
 
   const totalRevenue = filteredInvoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
-    if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+    const paymentType = inv.paymentType || 'downpayment';
+    if (inv.status === 'Paid') return sum + amount;
+    if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
     return sum;
   }, 0);
-
   // Compare current month vs last month
   const now = activeRangeEnd;
   const thisMonthStart = startOfMonth(now);
@@ -208,7 +213,9 @@ export function Analytics() {
     return isWithinInterval(invDate, { start: thisMonthStart, end: now });
   }).reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
-    if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+    const paymentType = inv.paymentType || 'downpayment';
+    if (inv.status === 'Paid') return sum + amount;
+    if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
     return sum;
   }, 0);
@@ -218,7 +225,9 @@ export function Analytics() {
     return isWithinInterval(invDate, { start: lastMonthStart, end: lastMonthEnd });
   }).reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
-    if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+    const paymentType = inv.paymentType || 'downpayment';
+    if (inv.status === 'Paid') return sum + amount;
+    if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
     return sum;
   }, 0);

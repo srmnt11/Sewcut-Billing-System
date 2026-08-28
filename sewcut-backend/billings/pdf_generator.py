@@ -239,23 +239,6 @@ def generate_invoice_pdf(billing):
     ]))
     elements.append(tt)
 
-    # ==== PAYMENT BREAKDOWN ====
-    if billing.payment_type == 'downpayment' and billing.status in ['Sent', 'Partial Payment', 'Delivered']:
-        elements.append(Spacer(1, 0.2 * inch))
-        dp = float(billing.grand_total) * 0.5
-        elements.append(Paragraph('PAYMENT BREAKDOWN', st_section))
-        pt = Table([
-            ['', Paragraph('50% Downpayment', st_tot_l), Paragraph(f'{PESO}{dp:,.2f}', st_tot_v)],
-            ['', Paragraph('Remaining Balance', st_tot_l), Paragraph(f'{PESO}{dp:,.2f}', st_tot_v)],
-        ], colWidths=tc)
-        pt.setStyle(TableStyle([
-            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('BACKGROUND', (1, 0), (-1, -1), ROW_ALT),
-        ]))
-        elements.append(pt)
-
     # ==== NOTES ====
     if billing.notes:
         elements.append(Spacer(1, 0.35 * inch))

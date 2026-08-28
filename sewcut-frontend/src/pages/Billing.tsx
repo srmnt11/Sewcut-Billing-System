@@ -273,8 +273,8 @@ export function Billing() {
     } else {
       // Full payment flow: Pending → Sent → Paid → Delivered
       if (invoice.status === 'Pending') newStatus = 'Sent';
-      else if (invoice.status === 'Sent') newStatus = 'Paid';
-      else if (invoice.status === 'Paid') newStatus = 'Delivered';
+      else if (invoice.status === 'Sent') newStatus = 'Delivered';
+      else if (invoice.status === 'Delivered') newStatus = 'Paid';
     }
     
     updateMutation.mutate({ 
@@ -400,6 +400,15 @@ export function Billing() {
     // In production, save to backend
   };
 
+  const selectedClientNames = useMemo(() => {
+  if (!advancedFilters.clients?.length) return null;
+  return new Set(
+    clients
+      .filter((c: any) => advancedFilters.clients!.includes(c.id))
+      .map((c: any) => c.companyName || c.name)
+  );
+  }, [advancedFilters.clients, clients]);
+
   const filteredInvoices = invoices.filter((invoice: any) => {
     const matchesSearch = 
       invoice.billingNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -417,8 +426,13 @@ export function Billing() {
     
     const matchesAdvancedStatus = !advancedFilters.status?.length ||
       advancedFilters.status.includes(invoice.status);
+
+    const matchesPaymentType = !advancedFilters.paymentTypes?.length ||
+      advancedFilters.paymentTypes.includes(invoice.paymentType || 'downpayment');
+
+    const matchesClient = !selectedClientNames || selectedClientNames.has(invoice.companyName);
     
-    return matchesSearch && matchesStatus && matchesDateRange && matchesAmountRange && matchesAdvancedStatus;
+    return matchesSearch && matchesStatus && matchesDateRange && matchesAmountRange && matchesAdvancedStatus && matchesPaymentType && matchesClient;
   });
 
   const toggleInvoiceSelection = (invoiceId: string) => {
@@ -506,9 +520,18 @@ export function Billing() {
     },
     {
       header: 'Invoice',
-      cell: (row: { billingNumber: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; companyName: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }) => (
+      cell: (row: { billingNumber: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; companyName: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; paymentType?: string; }) => (
         <div>
-          <p className="font-semibold text-slate-900">{row.billingNumber}</p>
+            <div className="flex items-center gap-2">
+            <p className="font-semibold text-slate-900">{row.billingNumber}</p>
+            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+              (row.paymentType || 'downpayment') === 'full' 
+                ? 'bg-cyan-500/15 text-cyan-400' 
+                : 'bg-amber-500/15 text-amber-400'
+            }`}>
+              {(row.paymentType || 'downpayment') === 'full' ? 'FP Invoice' : 'DP Invoice'}
+            </span>
+          </div>
           <p className="text-sm text-slate-500">{row.companyName}</p>
         </div>
       )
@@ -572,7 +595,7 @@ export function Billing() {
                 return null;
             }
           } else {
-            // Full payment flow: Pending → Sent → Paid → Delivered
+            // Full payment flow: Pending → Sent → Delivered → Paid
             switch (row.status) {
               case 'Pending':
                 return (
@@ -583,16 +606,16 @@ export function Billing() {
               case 'Sent':
                 return (
                   <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
-                    <CheckCircle className="w-4 h-4 mr-2" /> Mark as Paid
-                  </DropdownMenuItem>
-                );
-              case 'Paid':
-                return (
-                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
                     <CheckCircle className="w-4 h-4 mr-2" /> Mark as Delivered
                   </DropdownMenuItem>
                 );
               case 'Delivered':
+                return (
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleMarkAsPaid(row as any); }}>
+                    <CheckCircle className="w-4 h-4 mr-2" /> Mark as Paid
+                  </DropdownMenuItem>
+                );
+              case 'Paid':
                 return null; // Natural end of full payment flow
               default:
                 return null;
@@ -642,7 +665,9 @@ export function Billing() {
 
   const totalRevenue = invoices.reduce((sum: number, inv: any) => {
     const amount = parseFloat(inv.grandTotal) || 0;
-    if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+    const paymentType = inv.paymentType || 'downpayment';
+    if (inv.status === 'Paid') return sum + amount;
+    if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
     return sum;
   }, 0);
@@ -762,6 +787,7 @@ export function Billing() {
         availableStatuses={['Pending', 'Sent', 'Partial Payment', 'Delivered', 'Paid', 'Cancelled']}
         availableClients={clients.map((c: any) => ({ id: c.id, name: c.companyName || c.name }))}
         maxAmount={Math.max(...invoices.map((i: any) => i.grandTotal || 0), 100000)}
+        showPaymentType={true}
       />
 
       {/* Stats */}
@@ -839,7 +865,8 @@ export function Billing() {
               invoiceId={viewingPayment.id}
               grandTotal={viewingPayment.grandTotal}
               paidAmount={viewingPayment.status === 'Paid' ? viewingPayment.grandTotal : 
-                         viewingPayment.status === 'Partial Payment' ? viewingPayment.grandTotal * 0.5 : 0}
+                          viewingPayment.status === 'Partial Payment' ? viewingPayment.grandTotal * 0.5 :
+                          (viewingPayment.status === 'Delivered' && (viewingPayment.paymentType || 'downpayment') === 'downpayment') ? viewingPayment.grandTotal * 0.5 : 0}
               status={viewingPayment.status}
               dueDate={viewingPayment.dueDate}
               payments={[]}

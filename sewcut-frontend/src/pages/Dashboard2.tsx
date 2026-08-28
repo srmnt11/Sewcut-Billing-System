@@ -88,11 +88,12 @@ export function Dashboard2() {
   // -- Calculations --
   const totalSales: number = invoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
+    const paymentType = inv.paymentType || 'downpayment';
     if (inv.status === 'Paid') return sum + amount;
-    if (inv.status === 'Delivered') return sum + amount;
+    if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
     return sum;
-  }, 0);
+}, 0);
 
   const now = new Date();
   const monthStart = startOfMonth(now);
@@ -111,14 +112,18 @@ export function Dashboard2() {
 
   const mtdRevenue = mtdInvoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
-    if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+    const paymentType = inv.paymentType || 'downpayment';
+    if (inv.status === 'Paid') return sum + amount;
+    if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
     return sum;
   }, 0);
 
   const lastMonthRevenue = lastMonthInvoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
-    if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+    const paymentType = inv.paymentType || 'downpayment';
+    if (inv.status === 'Paid') return sum + amount;
+    if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
     return sum;
   }, 0);
@@ -152,14 +157,16 @@ export function Dashboard2() {
       return !isBefore(invDate, monthStartDate) && !isAfter(invDate, monthEndDate);
     });
 
-    const income = monthInvoices.reduce((sum, inv) => {
+  const income = monthInvoices.reduce((sum, inv) => {
       const amount = parseFloat(inv.grandTotal) || 0;
-      if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+      const paymentType = inv.paymentType || 'downpayment';
+      if (inv.status === 'Paid') return sum + amount;
+      if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
       if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
       return sum;
     }, 0);
 
-    const totalBilled = monthInvoices.reduce((sum, inv) => sum + (parseFloat(inv.grandTotal) || 0), 0);
+  const totalBilled = monthInvoices.reduce((sum, inv) => sum + (parseFloat(inv.grandTotal) || 0), 0);
 
     revenueData.push({
       month: format(monthDate, 'MMM'),
@@ -180,7 +187,8 @@ export function Dashboard2() {
   // Pipeline funnel
   const paidCount = invoices.filter((inv: any) => inv.status === 'Paid').length;
   const partialPaymentCount = invoices.filter((inv: any) => inv.status === 'Partial Payment').length;
-  const deliveredCount = invoices.filter((inv: any) => inv.status === 'Delivered').length;
+  const deliveredDownpaymentCount = invoices.filter((inv: any) => inv.status === 'Delivered' && (inv.paymentType || 'downpayment') === 'downpayment').length;
+  const deliveredFullCount = invoices.filter((inv: any) => inv.status === 'Delivered' && inv.paymentType === 'full').length;
   const sentCount = invoices.filter((inv: any) => inv.status === 'Sent').length;
   const pendingCount = invoices.filter((inv: any) => inv.status === 'Pending').length;
   const pendingAmount = invoices
@@ -201,8 +209,11 @@ export function Dashboard2() {
     title: `${overdueInvoices.length} Overdue Invoice${overdueInvoices.length > 1 ? 's' : ''}`,
     message: `₱${overdueInvoices.reduce((sum, inv) => sum + parseFloat(inv.grandTotal), 0).toLocaleString()} past due`
   });
-  deliveredCount > 0 && alerts.push({
-    type: 'pending', title: `${deliveredCount} Delivered`, message: 'Awaiting final 50% payment'
+  deliveredDownpaymentCount > 0 && alerts.push({
+      type: 'pending', title: `${deliveredDownpaymentCount} Delivered`, message: 'Awaiting final 50% payment'
+  });
+  deliveredFullCount > 0 && alerts.push({
+      type: 'pending', title: `${deliveredFullCount} Delivered`, message: 'Awaiting full payment'
   });
   partialPaymentCount > 0 && alerts.push({
     type: 'pending', title: `${partialPaymentCount} In Progress`, message: '50% received, ready to fulfill'

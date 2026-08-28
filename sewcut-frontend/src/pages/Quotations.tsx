@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { useNotificationContext } from '@/context/NotificationContext';
@@ -11,19 +11,14 @@ import {
   ArrowRightCircle, 
   MoreHorizontal,
   Search,
-  Filter,
   Mail,
   FileText,
   History,
   Trash2,
-  ArrowRight,
   Send,
   CheckCircle2,
-  XCircle,
-  Zap,
   Clock
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -43,13 +38,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
@@ -438,26 +426,37 @@ export function Quotations() {
     setSelectedQuotations([]);
   };
 
-  const filteredQuotations = quotations.filter((quotation: any) => {
-    const matchesSearch = 
-      quotation.quotationNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      quotation.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || quotation.status === statusFilter;
-    
-    // Advanced filters
-    const matchesDateRange = !advancedFilters.dateRange || 
-      (new Date(quotation.createdAt) >= new Date(advancedFilters.dateRange.start) &&
-       new Date(quotation.createdAt) <= new Date(advancedFilters.dateRange.end));
-    
-    const matchesAmountRange = !advancedFilters.amountRange ||
-      (parseFloat(quotation.grandTotal) >= advancedFilters.amountRange.min &&
-       parseFloat(quotation.grandTotal) <= advancedFilters.amountRange.max);
-    
-    const matchesAdvancedStatus = !advancedFilters.status?.length ||
-      advancedFilters.status.includes(quotation.status);
-    
-    return matchesSearch && matchesStatus && matchesDateRange && matchesAmountRange && matchesAdvancedStatus;
-  });
+  const selectedClientNames = useMemo(() => {
+  if (!advancedFilters.clients?.length) return null;
+  return new Set(
+    clients
+      .filter((c: any) => advancedFilters.clients!.includes(c.id))
+      .map((c: any) => (c.companyName || c.name || '').toLowerCase())
+  );
+}, [advancedFilters.clients, clients]);
+
+const filteredQuotations = quotations.filter((quotation: any) => {
+  const matchesSearch = 
+    quotation.quotationNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    quotation.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
+  const matchesStatus = statusFilter === 'all' || quotation.status === statusFilter;
+  
+  const matchesDateRange = !advancedFilters.dateRange || 
+    (new Date(quotation.createdAt) >= new Date(advancedFilters.dateRange.start) &&
+     new Date(quotation.createdAt) <= new Date(advancedFilters.dateRange.end));
+  
+  const matchesAmountRange = !advancedFilters.amountRange ||
+    (parseFloat(quotation.grandTotal) >= advancedFilters.amountRange.min &&
+     parseFloat(quotation.grandTotal) <= advancedFilters.amountRange.max);
+  
+  const matchesAdvancedStatus = !advancedFilters.status?.length ||
+    advancedFilters.status.includes(quotation.status);
+
+  const matchesClient = !selectedClientNames || 
+    selectedClientNames.has((quotation.companyName || '').toLowerCase()); // NEW
+
+  return matchesSearch && matchesStatus && matchesDateRange && matchesAmountRange && matchesAdvancedStatus && matchesClient;
+});
 
   const toggleQuotationSelection = (quotationId: string) => {
     setSelectedQuotations((prev) =>

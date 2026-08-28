@@ -35,14 +35,6 @@ npm run dev
 
 ---
 
-## 🔑 Login
-
-**Default Credentials:**
-- Username: `admin`
-- Password: `admin123`
-
----
-
 ## 📚 Documentation
 
 - **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - Detailed setup instructions

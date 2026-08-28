@@ -73,7 +73,9 @@ export function Sales() {
 
   const totalSales = filteredInvoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
-    if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+    const paymentType = inv.paymentType || 'downpayment';
+    if (inv.status === 'Paid') return sum + amount;
+    if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
     return sum;
   }, 0);
@@ -99,7 +101,9 @@ export function Sales() {
   });
   const prevSales = prevInvoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
-    if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+    const paymentType = inv.paymentType || 'downpayment';
+    if (inv.status === 'Paid') return sum + amount;
+    if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
     if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
     return sum;
   }, 0);
@@ -121,7 +125,9 @@ export function Sales() {
         date: format(date, 'MMM d'),
         sales: dayInvoices.reduce((sum, inv) => {
           const amount = parseFloat(inv.grandTotal) || 0;
-          if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+          const paymentType = inv.paymentType || 'downpayment';
+          if (inv.status === 'Paid') return sum + amount;
+          if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
           if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
           return sum;
         }, 0),

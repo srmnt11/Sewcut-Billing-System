@@ -1,9 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Filter,
   X,
   ChevronDown,
   Calendar,
@@ -12,7 +11,8 @@ import {
   Tag,
   Check,
   Sparkles,
-  SlidersHorizontal
+  SlidersHorizontal,
+  CreditCard
 } from 'lucide-react';
 import {
   Popover,
@@ -20,7 +20,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 export interface FilterConfig {
@@ -29,6 +28,7 @@ export interface FilterConfig {
   status?: string[];
   clients?: string[];
   categories?: string[];
+  paymentTypes?: string[];
   search?: string;
 }
 
@@ -38,7 +38,9 @@ interface AdvancedFilterProps {
   availableStatuses?: string[];
   availableClients?: Array<{ id: string; name: string }>;
   availableCategories?: string[];
+  availablePaymentTypes?: Array<{ value: string; label: string }>;
   maxAmount?: number;
+  showPaymentType?: boolean;
 }
 
 export default function AdvancedFilter({
@@ -47,7 +49,12 @@ export default function AdvancedFilter({
   availableStatuses = [],
   availableClients = [],
   availableCategories = [],
-  maxAmount = 100000
+  availablePaymentTypes = [
+    { value: 'downpayment', label: '50% Down Payment' },
+    { value: 'full', label: 'Full Payment' }
+  ],
+  maxAmount = 100000,
+  showPaymentType = false
 }: AdvancedFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<FilterConfig>(filters);
@@ -68,6 +75,7 @@ export default function AdvancedFilter({
     (filters.status?.length || 0) +
     (filters.clients?.length || 0) +
     (filters.categories?.length || 0) +
+    (filters.paymentTypes?.length || 0) +
     (filters.dateRange ? 1 : 0) +
     (filters.amountRange ? 1 : 0);
 
@@ -174,6 +182,7 @@ export default function AdvancedFilter({
           <div className="rounded-2xl neu-surface-soft p-3.5 sm:p-5 space-y-4">
             {/* Filter Buttons Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+
               {/* Date Range Filter */}
               <Popover>
                 <PopoverTrigger asChild>
@@ -277,19 +286,36 @@ export default function AdvancedFilter({
                       <DollarSign className="w-4 h-4 text-emerald-500" />
                       Amount Range
                     </p>
-                    <div className="neu-inset rounded-lg px-3 py-2">
-                      <label className="text-sm font-medium text-emerald-700">
-                        ₱{amountRange[0].toLocaleString()} - ₱{amountRange[1].toLocaleString()}
-                      </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Min</label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={amountRange[0]}
+                          onChange={(e) => {
+                            const value = Math.min(Math.max(Number(e.target.value) || 0, 0), amountRange[1]);
+                            setAmountRange([value, amountRange[1]]);
+                          }}
+                          className="mt-1 rounded-lg"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Max</label>
+                        <Input
+                          type="number"
+                          min={amountRange[0]}
+                          value={amountRange[1]}
+                          onChange={(e) => {
+                            const value = Math.max(Number(e.target.value) || 0, amountRange[0]);
+                            setAmountRange([amountRange[0], value]);
+                          }}
+                          className="mt-1 rounded-lg"
+                          placeholder={maxAmount.toString()}
+                        />
+                      </div>
                     </div>
-                    <Slider
-                      min={0}
-                      max={maxAmount}
-                      step={1000}
-                      value={amountRange}
-                      onValueChange={(value) => setAmountRange(value as [number, number])}
-                      className="mt-2"
-                    />
                     <Button
                       onClick={() => {
                         setLocalFilters(prev => ({
@@ -476,6 +502,62 @@ export default function AdvancedFilter({
                   </PopoverContent>
                 </Popover>
               )}
+              {/* Payment Type Filter */}
+              {showPaymentType && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "justify-between rounded-xl transition-all duration-200 h-12 group/btn",
+                      (filters.paymentTypes?.length || 0) > 0 ? "neu-press text-cyan-700" : "neu-surface-soft text-slate-600"
+                    )}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={cn(
+                        "w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 neu-press",
+                        (filters.paymentTypes?.length || 0) > 0 ? "text-cyan-600" : "text-slate-500"
+                      )}>
+                        <CreditCard className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="text-sm font-medium">Payment Type</span>
+                    </div>
+                    {(filters.paymentTypes?.length || 0) > 0 && (
+                      <Badge className="ml-2 neu-chip text-cyan-700 text-[10px] px-1.5 h-5">
+                        {filters.paymentTypes?.length}
+                      </Badge>
+                    )}
+                    <ChevronDown className="w-4 h-4 ml-auto text-slate-400" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 rounded-2xl neu-surface-soft p-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3">
+                      <CreditCard className="w-4 h-4 text-cyan-500" />
+                      Filter by Payment Type
+                    </p>
+                    {availablePaymentTypes.map((pt) => (
+                      <div key={pt.value} className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors cursor-pointer" onClick={() => toggleArrayFilter('paymentTypes', pt.value)}>
+                        <Checkbox
+                          id={`paymentType-${pt.value}`}
+                          checked={(localFilters.paymentTypes || []).includes(pt.value)}
+                          onCheckedChange={() => toggleArrayFilter('paymentTypes', pt.value)}
+                        />
+                        <label
+                          htmlFor={`paymentType-${pt.value}`}
+                          className="text-sm cursor-pointer flex-1"
+                        >
+                          {pt.label}
+                        </label>
+                      </div>
+                    ))}
+                    <Button onClick={handleApplyFilters} className="w-full mt-3 rounded-lg">
+                      <Check className="w-4 h-4 mr-1.5" /> Apply Filter
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+              )}
             </div>
 
             {/* Active Filters Display */}
@@ -522,6 +604,19 @@ export default function AdvancedFilter({
                           const updated = filters.status?.filter(s => s !== status);
                           onFilterChange({ ...filters, status: updated });
                           setLocalFilters(prev => ({ ...prev, status: updated }));
+                        }}
+                      />
+                    </Badge>
+                  ))}
+                  {filters.paymentTypes?.map((pt) => (
+                    <Badge key={pt} className="gap-1.5 neu-chip text-cyan-700 rounded-lg px-3 py-1.5 cursor-default">
+                      {availablePaymentTypes.find(p => p.value === pt)?.label || pt}
+                      <X
+                        className="w-3 h-3 cursor-pointer hover:text-cyan-900 transition-colors ml-1"
+                        onClick={() => {
+                          const updated = filters.paymentTypes?.filter(p => p !== pt);
+                          onFilterChange({ ...filters, paymentTypes: updated });
+                          setLocalFilters(prev => ({ ...prev, paymentTypes: updated }));
                         }}
                       />
                     </Badge>

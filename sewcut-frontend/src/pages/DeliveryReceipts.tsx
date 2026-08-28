@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useSearchParams } from 'react-router-dom';
@@ -31,7 +31,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import {
   AlertDialog,
@@ -590,11 +589,14 @@ export function DeliveryReceipts() {
   const filteredReceipts = useMemo(() => {
     const selectedClientNames = new Set(
       (advancedFilters.clients || [])
-        .map((clientId) => clients.find((client: any) => client.id === clientId)?.name)
+        .map((clientId) => {
+          const client = clients.find((c: any) => c.id === clientId);
+          return client?.companyName || client?.name;
+        })
         .filter(Boolean)
         .map((name) => String(name).trim().toLowerCase())
     );
-
+    
     return receipts.filter((receipt: DeliveryReceipt) => {
       const matchesSearch =
         receipt.receiptNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -945,7 +947,7 @@ export function DeliveryReceipts() {
         filters={advancedFilters}
         onFilterChange={setAdvancedFilters}
         availableStatuses={['Draft', 'Issued']}
-        availableClients={clients.map((client: any) => ({ id: client.id, name: client.name || 'Unnamed Client' }))}
+        availableClients={clients.map((client: any) => ({ id: client.id, name: client.companyName || client.name || 'Unnamed Client' }))} // fixed
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 compact-grid-5">

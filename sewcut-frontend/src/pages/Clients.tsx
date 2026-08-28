@@ -210,7 +210,9 @@ export function Clients() {
       .filter((inv: any) => inv.companyName === (client as any).name)
       .reduce((sum: number, inv: any) => {
         const amount = parseFloat(inv.grandTotal) || 0;
-        if (inv.status === 'Paid' || inv.status === 'Delivered') return sum + amount;
+        const paymentType = inv.paymentType || 'downpayment';
+        if (inv.status === 'Paid') return sum + amount;
+        if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
         if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
         return sum;
       }, 0);
