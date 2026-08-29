@@ -147,32 +147,21 @@ export function Drafts2() {
               </div>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Link to={createPageUrl('Billing')}>
-              <Button
-                size="lg"
-                className="text-slate-700"
-              >
+          <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+            <Link to={createPageUrl('Billing')} className="flex-1 sm:flex-none">
+              <Button size="lg" className="w-full sm:w-auto text-slate-700">
                 <FileText className="w-4 h-4 mr-2" />
                 New Invoice
               </Button>
             </Link>
-            <Link to={createPageUrl('Quotations')}>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-slate-700"
-              >
+            <Link to={createPageUrl('Quotations')} className="flex-1 sm:flex-none">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-slate-700">
                 <FileCheck className="w-4 h-4 mr-2" />
                 New Quotation
               </Button>
             </Link>
-            <Link to={createPageUrl('DeliveryReceipts')}>
-              <Button
-                size="lg"
-                variant="outline"
-                className="text-slate-700"
-              >
+            <Link to={createPageUrl('DeliveryReceipts')} className="flex-1 sm:flex-none">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-slate-700">
                 <Truck className="w-4 h-4 mr-2" />
                 New Delivery Receipt
               </Button>

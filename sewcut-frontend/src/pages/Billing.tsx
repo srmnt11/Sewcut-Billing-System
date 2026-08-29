@@ -18,7 +18,8 @@ import {
   Clock,
   Send,
   Truck,
-  CheckCircle2} from 'lucide-react';
+  CheckCircle2
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -40,12 +41,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
-import InvoiceForm from '@/components/billing/InvoiceForm';
-import SendEmailDialog from '@/components/billing/SendEmailDialog';
+import InvoiceForm from '@/components/invoices/InvoiceForm';
+import SendEmailDialog from '@/components/invoices/SendEmailDialog';
 import BulkActions from '@/components/shared/BulkActions';
 import AdvancedFilter, { FilterConfig } from '@/components/shared/AdvancedFilter';
-import PaymentTracking from '@/components/billing/PaymentTracking';
-import RecurringInvoiceDialog from '@/components/billing/RecurringInvoiceDialog';
+import PaymentTracking from '@/components/invoices/PaymentTracking';
+import RecurringInvoiceDialog from '@/components/invoices/RecurringInvoiceDialog';
 
 export function Billing() {
   const [showForm, setShowForm] = useState(false);
@@ -89,12 +90,10 @@ export function Billing() {
       setLoadingDraft(draftId);
       api.entities.Draft.get(draftId)
         .then((draft: any) => {
-          // Convert draft data to invoice format
           const draftData = draft.draft_data;
           setEditingInvoice(draftData);
-          setEditingDraftId(draftId); // Track that we're editing a draft
+          setEditingDraftId(draftId);
           setShowForm(true);
-          // Remove draftId from URL
           setSearchParams({});
           setLoadingDraft(null);
         })
@@ -110,7 +109,6 @@ export function Billing() {
   const createMutation = useMutation<any, Error, any>({
     mutationFn: (data: any) => api.entities.Billing.create(data),
     onSuccess: async (result, variables) => {
-      // If we were editing a draft, delete it after successful save
       if (editingDraftId) {
         try {
           await api.entities.Draft.delete(editingDraftId);
@@ -233,8 +231,6 @@ export function Billing() {
   });
 
   const handleSave = (data: any) => {
-    // If editing a draft (has editingDraftId) or editingInvoice has no id, create new billing
-    // Otherwise update existing billing
     if (editingInvoice && editingInvoice.id && !editingDraftId) {
       updateMutation.mutate({ id: editingInvoice.id, data });
     } else {
@@ -244,10 +240,8 @@ export function Billing() {
 
   const handleSaveAsDraft = (data: any) => {
     if (editingDraftId) {
-      // Update existing draft
       updateDraftMutation.mutate({ id: editingDraftId, data });
     } else {
-      // Create new draft
       createDraftMutation.mutate(data);
     }
   };
@@ -258,20 +252,17 @@ export function Billing() {
     setShowForm(true);
   };
 
-  // --- STEP 7.1: Replace handleMarkAsPaid with paymentType-aware version ---
   const handleMarkAsPaid = (invoice: { id: any; status: string; paymentType?: string }) => {
-    const paymentType = invoice.paymentType || 'downpayment'; // Default to downpayment if not set
+    const paymentType = invoice.paymentType || 'downpayment';
     
     let newStatus = invoice.status;
     
     if (paymentType === 'downpayment') {
-      // Existing 4-step flow for downpayment
       if (invoice.status === 'Pending') newStatus = 'Sent';
       else if (invoice.status === 'Sent') newStatus = 'Partial Payment';
       else if (invoice.status === 'Partial Payment') newStatus = 'Delivered';
       else if (invoice.status === 'Delivered') newStatus = 'Paid';
     } else {
-      // Full payment flow: Pending → Sent → Paid → Delivered
       if (invoice.status === 'Pending') newStatus = 'Sent';
       else if (invoice.status === 'Sent') newStatus = 'Delivered';
       else if (invoice.status === 'Delivered') newStatus = 'Paid';
@@ -306,7 +297,6 @@ export function Billing() {
       const url = window.URL.createObjectURL(blob);
       window.open(url, '_blank');
       
-      // Clean up the object URL after a delay
       setTimeout(() => window.URL.revokeObjectURL(url), 60000);
     } catch (error) {
       console.error('Error previewing PDF:', error);
@@ -315,17 +305,17 @@ export function Billing() {
   };
 
   const scheduleEmailMutation = useMutation({
-  mutationFn: ({ id, emailData }: { id: string; emailData: any }) =>
-    api.post(`/api/billings/${id}/schedule-email/`, emailData),
-  onSuccess: (data: any) => {
-    setShowEmailDialog(false);
-    setEmailingInvoice(null);
-    toast.success(`Email scheduled for ${new Date(data.scheduled_at).toLocaleString()}`);
-  },
-  onError: (error: any) => {
-    toast.error(error.message || 'Failed to schedule email');
-  }
-});
+    mutationFn: ({ id, emailData }: { id: string; emailData: any }) =>
+      api.post(`/api/billings/${id}/schedule-email/`, emailData),
+    onSuccess: (data: any) => {
+      setShowEmailDialog(false);
+      setEmailingInvoice(null);
+      toast.success(`Email scheduled for ${new Date(data.scheduled_at).toLocaleString()}`);
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to schedule email');
+    }
+  });
 
   const sendEmailMutation = useMutation({
     mutationFn: ({ id, emailData }: { id: string; emailData: { to: string; subject: string; message: string } }) =>
@@ -397,16 +387,15 @@ export function Billing() {
 
   const handleRecurringSave = () => {
     toast.success('Recurring invoice schedule saved');
-    // In production, save to backend
   };
 
   const selectedClientNames = useMemo(() => {
-  if (!advancedFilters.clients?.length) return null;
-  return new Set(
-    clients
-      .filter((c: any) => advancedFilters.clients!.includes(c.id))
-      .map((c: any) => c.companyName || c.name)
-  );
+    if (!advancedFilters.clients?.length) return null;
+    return new Set(
+      clients
+        .filter((c: any) => advancedFilters.clients!.includes(c.id))
+        .map((c: any) => c.companyName || c.name)
+    );
   }, [advancedFilters.clients, clients]);
 
   const filteredInvoices = invoices.filter((invoice: any) => {
@@ -415,7 +404,6 @@ export function Billing() {
       invoice.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
     
-    // Advanced filters
     const matchesDateRange = !advancedFilters.dateRange || 
       (new Date(invoice.billingDate) >= new Date(advancedFilters.dateRange.start) &&
        new Date(invoice.billingDate) <= new Date(advancedFilters.dateRange.end));
@@ -462,7 +450,6 @@ export function Billing() {
     setAdvancedFilters({});
   };
 
-  // --- STEP 8: Compute payment type info for bulk actions ---
   const selectedInvoiceObjects = useMemo(() => {
     return invoices.filter((inv: any) => selectedInvoices.includes(inv.id));
   }, [invoices, selectedInvoices]);
@@ -479,24 +466,21 @@ export function Billing() {
 
   const getAvailableStatusesForSelection = () => {
     if (hasMixedPaymentTypes) {
-      // If mixed, return empty array to hide/disable the status change
       return [];
     }
     
-    // Single payment type - return appropriate statuses
     const paymentType = selectedPaymentTypes[0] || 'downpayment';
     
     if (paymentType === 'downpayment') {
       return ['Pending', 'Sent', 'Partial Payment', 'Delivered', 'Paid', 'Cancelled'];
     } else {
-      // Full payment
       return ['Pending', 'Sent', 'Paid', 'Delivered', 'Cancelled'];
     }
   };
 
   const availableBulkStatuses = getAvailableStatusesForSelection();
 
-  // --- STEP 7.2: Update getActionButton in columns ---
+  // ===== FIXED COLUMNS WITH PROPER WIDTHS AND TRUNCATION =====
   const columns = [
     {
       header: (
@@ -520,11 +504,13 @@ export function Billing() {
     },
     {
       header: 'Invoice',
-      cell: (row: { billingNumber: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; companyName: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; paymentType?: string; }) => (
-        <div>
-            <div className="flex items-center gap-2">
-            <p className="font-semibold text-slate-900">{row.billingNumber}</p>
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+      className: 'min-w-[200px]',
+      cellClassName: 'min-w-[200px]',
+      cell: (row: { billingNumber: string; companyName: string; paymentType?: string; }) => (
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-semibold text-slate-900 truncate max-w-[140px]">{row.billingNumber}</p>
+            <span className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
               (row.paymentType || 'downpayment') === 'full' 
                 ? 'bg-cyan-500/15 text-cyan-400' 
                 : 'bg-amber-500/15 text-amber-400'
@@ -532,38 +518,42 @@ export function Billing() {
               {(row.paymentType || 'downpayment') === 'full' ? 'FP Invoice' : 'DP Invoice'}
             </span>
           </div>
-          <p className="text-sm text-slate-500">{row.companyName}</p>
+          <p className="text-sm text-slate-500 truncate max-w-[220px]">{row.companyName}</p>
         </div>
       )
     },
     {
       header: 'Billing Date',
+      className: 'whitespace-nowrap',
       cell: (row: { billingDate: string | number | Date; }) => (
-        <span className="text-slate-600">
+        <span className="text-slate-600 whitespace-nowrap">
           {row.billingDate ? format(new Date(row.billingDate), 'MMM d, yyyy') : '-'}
         </span>
       )
     },
     {
       header: 'Amount',
+      className: 'whitespace-nowrap text-right',
+      cellClassName: 'text-right',
       cell: (row: { grandTotal: any; }) => (
-        <span className="font-semibold text-slate-900">
+        <span className="font-semibold text-slate-900 whitespace-nowrap">
           ₱{parseFloat(row.grandTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
       )
     },
     {
       header: 'Status',
+      className: 'whitespace-nowrap',
       cell: (row: { status: string; }) => <StatusBadge status={row.status} />
     },
     {
       header: 'Actions',
+      className: 'whitespace-nowrap',
       cell: (row: any) => {
         const getActionButton = () => {
           const paymentType = row.paymentType || 'downpayment';
           
           if (paymentType === 'downpayment') {
-            // Existing 4-step flow for downpayment
             switch (row.status) {
               case 'Pending':
                 return (
@@ -590,12 +580,11 @@ export function Billing() {
                   </DropdownMenuItem>
                 );
               case 'Paid':
-                return null; // Natural end of downpayment flow
+                return null;
               default:
                 return null;
             }
           } else {
-            // Full payment flow: Pending → Sent → Delivered → Paid
             switch (row.status) {
               case 'Pending':
                 return (
@@ -616,7 +605,7 @@ export function Billing() {
                   </DropdownMenuItem>
                 );
               case 'Paid':
-                return null; // Natural end of full payment flow
+                return null;
               default:
                 return null;
             }
@@ -690,37 +679,37 @@ export function Billing() {
               <span className="text-slate-500 text-sm font-medium">Billing & Invoices</span>
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-1">Invoice Management</h1>
-            <div className="hero-stat-row flex items-center gap-6 mt-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">₱{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                  <p className="text-slate-500 text-xs">Collected</p>
-                </div>
+          <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
+                <DollarSign className="w-4 h-4 text-emerald-500" />
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{invoices.length}</p>
-                  <p className="text-slate-500 text-xs">Invoices</p>
-                </div>
-              </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
-                  <Clock className="w-4 h-4 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{pendingInvoiceCount}</p>
-                  <p className="text-slate-500 text-xs">Pending</p>
-                </div>
+              <div className="min-w-0">
+                <p className="text-slate-800 text-sm font-semibold truncate">₱{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                <p className="text-slate-500 text-xs truncate">Collected</p>
               </div>
             </div>
+            <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
+                <FileText className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-slate-800 text-sm font-semibold truncate">{invoices.length}</p>
+                <p className="text-slate-500 text-xs truncate">Invoices</p>
+              </div>
+            </div>
+            <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
+                <Clock className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-slate-800 text-sm font-semibold truncate">{pendingInvoiceCount}</p>
+                <p className="text-slate-500 text-xs truncate">Pending</p>
+              </div>
+            </div>
+          </div>
           </div>
           <Button
             size="lg"
@@ -733,7 +722,6 @@ export function Billing() {
         </div>
       </div>
 
-      {/* --- STEP 8: Bulk Actions with paymentType awareness --- */}
       {selectedInvoices.length > 0 && (
         <BulkActions
           selectedCount={selectedInvoices.length}
@@ -754,7 +742,6 @@ export function Billing() {
         />
       )}
 
-      {/* Quick Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
           <div className="relative flex-1 max-w-md">
@@ -780,7 +767,6 @@ export function Billing() {
         </div>
       </div>
 
-      {/* Advanced Filters */}
       <AdvancedFilter
         filters={advancedFilters}
         onFilterChange={setAdvancedFilters}
@@ -790,7 +776,6 @@ export function Billing() {
         showPaymentType={true}
       />
 
-      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 compact-grid-5">
         {[
           { label: 'Total', count: invoices.length, color: 'text-slate-900', bg: 'bg-slate-50', icon: <FileText className="w-4 h-4 text-slate-400" /> },
@@ -809,7 +794,6 @@ export function Billing() {
         ))}
       </div>
 
-      {/* Table */}
       <DataTable
         columns={columns}
         data={filteredInvoices}
@@ -818,7 +802,6 @@ export function Billing() {
         onRowClick={(row: any) => toggleInvoiceSelection(row.id)}
       />
 
-      {/* Form Modal */}
       <InvoiceForm
         open={showForm}
         onClose={() => {
@@ -834,7 +817,6 @@ export function Billing() {
         isLoading={createMutation.isPending || updateMutation.isPending || createDraftMutation.isPending || updateDraftMutation.isPending}
       />
 
-      {/* Send Email Dialog */}
       <SendEmailDialog
         open={showEmailDialog}
         onClose={() => {
@@ -851,7 +833,6 @@ export function Billing() {
         isLoading={sendEmailMutation.isPending || scheduleEmailMutation.isPending}   
       />
 
-      {/* Payment Tracking Dialog */}
       {viewingPayment && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="neu-surface-soft p-6 max-w-md w-full m-4">
@@ -875,7 +856,6 @@ export function Billing() {
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteInvoice} onOpenChange={() => setDeleteInvoice(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -903,7 +883,6 @@ export function Billing() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Recurring Invoice Dialog */}
       <RecurringInvoiceDialog
         open={showRecurringDialog}
         onClose={() => {

@@ -305,69 +305,69 @@ export function Dashboard2() {
           <div className="absolute top-1/2 right-1/4 w-56 h-56 bg-white/40 rounded-full blur-2xl animate-orb3" />
           <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
-        <div className="relative z-10 px-8 py-10">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-slate-500 text-sm font-medium">{format(now, 'EEEE, MMMM d, yyyy')}</span>
-              </div>
-              <h1 className="text-3xl lg:text-4xl font-bold text-slate-800 mb-2">
-                Welcome back
-              </h1>
-              <div className="flex items-center gap-6 mt-5">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 neu-press flex items-center justify-center">
-                    <DollarSign className="w-4 h-4 text-emerald-500" />
-                  </div>
-                  <div>
-                    <p className="text-slate-800 text-sm font-semibold">₱{animatedTotalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                    <p className="text-slate-500 text-xs">Total Sales</p>
-                  </div>
-                </div>
-                <div className="w-px h-8 bg-white/60" />
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 neu-press flex items-center justify-center">
-                    <FileText className="w-4 h-4 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-slate-800 text-sm font-semibold">{invoices.length}</p>
-                    <p className="text-slate-500 text-xs">Invoices</p>
-                  </div>
-                </div>
-                <div className="w-px h-8 bg-white/60" />
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 neu-press flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <div>
-                    <p className="text-slate-800 text-sm font-semibold">{overdueInvoices.length}</p>
-                    <p className="text-slate-500 text-xs">Overdue</p>
-                  </div>
-                </div>
-              </div>
+      <div className="relative z-10 hero-content px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-slate-500 text-sm font-medium">{format(now, 'EEEE, MMMM d, yyyy')}</span>
             </div>
-            <div className="flex gap-3 flex-shrink-0">
-              <Link to={createPageUrl('Billing')}>
-                <Button size="lg" className="text-slate-800">
-                  <FileText className="w-4 h-4 mr-2" />
-                  New Invoice
-                </Button>
-              </Link>
-              <Link to={createPageUrl('Quotations')}>
-                <Button size="lg" variant="outline" className="text-slate-600">
-                  <FileCheck className="w-4 h-4 mr-2" />
-                  New Quotation
-                </Button>
-              </Link>
-              <Link to={createPageUrl('DeliveryReceipts')}>
-                <Button size="lg" variant="outline" className="text-slate-600">
-                  <Truck className="w-4 h-4 mr-2" />
-                  New Delivery Receipt
-                </Button>
-              </Link>
+            <h1 className="text-3xl lg:text-4xl font-bold text-slate-800 mb-2">
+              Welcome back
+            </h1>
+            <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
+                  <DollarSign className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">₱{animatedTotalSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-slate-500 text-xs truncate">Total Sales</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4 text-blue-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{invoices.length}</p>
+                  <p className="text-slate-500 text-xs truncate">Invoices</p>
+                </div>
+              </div>
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
+                  <Clock className="w-4 h-4 text-amber-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{overdueInvoices.length}</p>
+                  <p className="text-slate-500 text-xs truncate">Overdue</p>
+                </div>
+              </div>
             </div>
           </div>
+          <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+            <Link to={createPageUrl('Billing')} className="flex-1 sm:flex-none">
+              <Button size="lg" className="w-full sm:w-auto text-slate-800">
+                <FileText className="w-4 h-4 mr-2" />
+                New Invoice
+              </Button>
+            </Link>
+            <Link to={createPageUrl('Quotations')} className="flex-1 sm:flex-none">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-slate-600">
+                <FileCheck className="w-4 h-4 mr-2" />
+                New Quotation
+              </Button>
+            </Link>
+            <Link to={createPageUrl('DeliveryReceipts')} className="flex-1 sm:flex-none">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-slate-600">
+                <Truck className="w-4 h-4 mr-2" />
+                New Delivery Receipt
+              </Button>
+            </Link>
+          </div>
         </div>
+      </div>
       </div>
 
       {/* ===== STATS CARDS ===== */}

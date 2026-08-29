@@ -45,8 +45,9 @@ export default function DataTable({
   }
 
   return (
-    <div className="rounded-2xl neu-surface-soft overflow-hidden">
-      <Table>
+      <div className="rounded-2xl neu-surface-soft overflow-hidden relative">
+        <div className="pointer-events-none absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-white/80 dark:from-slate-900/60 to-transparent z-10 sm:hidden" />
+        <Table>
         <TableHeader>
           <TableRow className="neu-inset hover:bg-transparent border-b border-white/60">
             {columns.map((column, index) => (

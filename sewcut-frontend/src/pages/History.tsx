@@ -112,42 +112,42 @@ export function History() {
           <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
           <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
-        <div className="relative z-10 px-8 py-8">
+        <div className="relative z-10 hero-content px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8">
           <div className="flex items-center gap-2 mb-1">
             <ActivityIcon className="w-5 h-5 text-slate-500" />
             <span className="text-slate-500 text-sm font-medium">Activity Log</span>
           </div>
           <h1 className="text-3xl font-bold text-slate-800 mb-1">History</h1>
-        
+
           {/* Quick Stats */}
-          <div className="flex items-center gap-6 mt-5">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 neu-press flex items-center justify-center">
+          <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                 <Clock className="w-4 h-4 text-amber-500" />
               </div>
-              <div>
-                <p className="text-slate-800 text-sm font-semibold">{todayCount}</p>
-                <p className="text-slate-500 text-xs">Today</p>
+              <div className="min-w-0">
+                <p className="text-slate-800 text-sm font-semibold truncate">{todayCount}</p>
+                <p className="text-slate-500 text-xs truncate">Today</p>
               </div>
             </div>
-            <div className="w-px h-8 bg-white/60" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 neu-press flex items-center justify-center">
+            <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                 <FileText className="w-4 h-4 text-blue-500" />
               </div>
-              <div>
-                <p className="text-slate-800 text-sm font-semibold">{activities.length}</p>
-                <p className="text-slate-500 text-xs">Total Activities</p>
+              <div className="min-w-0">
+                <p className="text-slate-800 text-sm font-semibold truncate">{activities.length}</p>
+                <p className="text-slate-500 text-xs truncate">Total Activities</p>
               </div>
             </div>
-            <div className="w-px h-8 bg-white/60" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 neu-press flex items-center justify-center">
+            <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                 <Sparkles className="w-4 h-4 text-emerald-500" />
               </div>
-              <div>
-                <p className="text-slate-800 text-sm font-semibold">{Object.keys(categoryCounts).length}</p>
-                <p className="text-slate-500 text-xs">Categories</p>
+              <div className="min-w-0">
+                <p className="text-slate-800 text-sm font-semibold truncate">{Object.keys(categoryCounts).length}</p>
+                <p className="text-slate-500 text-xs truncate">Categories</p>
               </div>
             </div>
           </div>

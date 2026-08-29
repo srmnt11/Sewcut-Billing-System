@@ -42,10 +42,26 @@ import { toast } from 'sonner';
 import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import QuotationForm from '@/components/quotations/QuotationForm';
-import SendEmailDialog from '@/components/billing/SendEmailDialog';
+import SendEmailDialog from '@/components/invoices/SendEmailDialog';
 import BulkActions from '@/components/shared/BulkActions';
 import AdvancedFilter, { FilterConfig } from '@/components/shared/AdvancedFilter';
 import QuotationVersionControl from '@/components/quotations/QuotationVersionControl';
+
+type QuotationType = {
+  id: string;
+  quotationNumber: string;
+  companyName: string;
+  companyEmail?: string;
+  items: any[];
+  subtotal: number;
+  discount: number;
+  grandTotal: number;
+  status: string;
+  createdAt?: string;
+  validUntil: string;
+  convertedToInvoice?: string;
+  notes?: string;
+};
 
 export function Quotations() {
 
@@ -102,7 +118,6 @@ export function Quotations() {
   const createMutation = useMutation<any, Error, any>({
     mutationFn: (data: any) => api.entities.Quotation.create(data),
     onSuccess: async (result, variables) => {
-      // If we were editing a draft, delete it after successful save
       if (editingDraftId) {
         try {
           await api.entities.Draft.delete(editingDraftId);
@@ -215,23 +230,6 @@ export function Quotations() {
     }
   });
 
-  // Define a type for Quotation if not already defined
-  type QuotationType = {
-    id: string;
-    quotationNumber: string;
-    companyName: string;
-    companyEmail?: string;
-    items: any[];
-    subtotal: number;
-    discount: number;
-    grandTotal: number;
-    status: string;
-    createdAt?: string;
-    validUntil: string;
-    convertedToInvoice?: string;
-    notes?: string;
-  };
-
   const deleteMutation = useMutation<any, Error, string>({
     mutationFn: (id: string) => api.entities.Quotation.delete(id),
     onSuccess: () => {
@@ -291,7 +289,6 @@ export function Quotations() {
   });
 
   const handleSave = (data: any) => {
-    // If editing a draft, always create a new quotation (then draft gets deleted on success)
     if (editingQuotation && editingQuotation.id && !editingDraftId) {
       updateMutation.mutate({ id: editingQuotation.id, data });
     } else {
@@ -302,7 +299,6 @@ export function Quotations() {
   const handleSaveAsDraft = async (data: any) => {
     try {
       if (editingDraftId) {
-        // Update the existing draft
         await api.entities.Draft.update(editingDraftId, {
           title: data.quotationNumber || 'Untitled Quotation',
           type: 'quotation',
@@ -314,7 +310,6 @@ export function Quotations() {
         toast.success('Draft updated successfully');
         addActivity({ type: 'draft_updated', category: 'draft', title: 'Draft Updated', description: 'Quotation draft has been updated' });
       } else {
-        // Create a new draft
         await api.entities.Draft.create({
           title: data.quotationNumber || 'Untitled Quotation',
           type: 'quotation',
@@ -414,7 +409,6 @@ export function Quotations() {
 
   const handleVersionRestore = () => {
     toast.success('Version restored successfully');
-    // In production, restore from backend 
   };
 
   const handleVersionCompare = () => {
@@ -427,36 +421,36 @@ export function Quotations() {
   };
 
   const selectedClientNames = useMemo(() => {
-  if (!advancedFilters.clients?.length) return null;
-  return new Set(
-    clients
-      .filter((c: any) => advancedFilters.clients!.includes(c.id))
-      .map((c: any) => (c.companyName || c.name || '').toLowerCase())
-  );
-}, [advancedFilters.clients, clients]);
+    if (!advancedFilters.clients?.length) return null;
+    return new Set(
+      clients
+        .filter((c: any) => advancedFilters.clients!.includes(c.id))
+        .map((c: any) => (c.companyName || c.name || '').toLowerCase())
+    );
+  }, [advancedFilters.clients, clients]);
 
-const filteredQuotations = quotations.filter((quotation: any) => {
-  const matchesSearch = 
-    quotation.quotationNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    quotation.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
-  const matchesStatus = statusFilter === 'all' || quotation.status === statusFilter;
-  
-  const matchesDateRange = !advancedFilters.dateRange || 
-    (new Date(quotation.createdAt) >= new Date(advancedFilters.dateRange.start) &&
-     new Date(quotation.createdAt) <= new Date(advancedFilters.dateRange.end));
-  
-  const matchesAmountRange = !advancedFilters.amountRange ||
-    (parseFloat(quotation.grandTotal) >= advancedFilters.amountRange.min &&
-     parseFloat(quotation.grandTotal) <= advancedFilters.amountRange.max);
-  
-  const matchesAdvancedStatus = !advancedFilters.status?.length ||
-    advancedFilters.status.includes(quotation.status);
+  const filteredQuotations = quotations.filter((quotation: any) => {
+    const matchesSearch = 
+      quotation.quotationNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      quotation.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || quotation.status === statusFilter;
+    
+    const matchesDateRange = !advancedFilters.dateRange || 
+      (new Date(quotation.createdAt) >= new Date(advancedFilters.dateRange.start) &&
+       new Date(quotation.createdAt) <= new Date(advancedFilters.dateRange.end));
+    
+    const matchesAmountRange = !advancedFilters.amountRange ||
+      (parseFloat(quotation.grandTotal) >= advancedFilters.amountRange.min &&
+       parseFloat(quotation.grandTotal) <= advancedFilters.amountRange.max);
+    
+    const matchesAdvancedStatus = !advancedFilters.status?.length ||
+      advancedFilters.status.includes(quotation.status);
 
-  const matchesClient = !selectedClientNames || 
-    selectedClientNames.has((quotation.companyName || '').toLowerCase()); // NEW
+    const matchesClient = !selectedClientNames || 
+      selectedClientNames.has((quotation.companyName || '').toLowerCase());
 
-  return matchesSearch && matchesStatus && matchesDateRange && matchesAmountRange && matchesAdvancedStatus && matchesClient;
-});
+    return matchesSearch && matchesStatus && matchesDateRange && matchesAmountRange && matchesAdvancedStatus && matchesClient;
+  });
 
   const toggleQuotationSelection = (quotationId: string) => {
     setSelectedQuotations((prev) =>
@@ -485,6 +479,7 @@ const filteredQuotations = quotations.filter((quotation: any) => {
     setAdvancedFilters({});
   };
 
+  // ===== FIXED COLUMNS WITH PROPER WIDTHS AND TRUNCATION =====
   const columns = [
     {
       header: (
@@ -508,44 +503,52 @@ const filteredQuotations = quotations.filter((quotation: any) => {
     },
     {
       header: 'Quotation',
+      className: 'min-w-[180px]',
+      cellClassName: 'min-w-[180px]',
       cell: (row: any) => (
-        <div>
-          <p className="font-semibold text-slate-900">{row.quotationNumber}</p>
-          <p className="text-sm text-slate-500">{row.companyName}</p>
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-900 truncate max-w-[160px]">{row.quotationNumber}</p>
+          <p className="text-sm text-slate-500 truncate max-w-[160px]">{row.companyName}</p>
         </div>
       )
     },
     {
       header: 'Created',
+      className: 'whitespace-nowrap',
       cell: (row: { createdAt: string | number | Date; }) => (
-        <span className="text-slate-600">
+        <span className="text-slate-600 whitespace-nowrap">
           {row.createdAt ? format(new Date(row.createdAt), 'MMM d, yyyy') : '-'}
         </span>
       )
     },
     {
       header: 'Valid Until',
+      className: 'whitespace-nowrap',
       cell: (row: { validUntil: string | number | Date; }) => (
-        <span className="text-slate-600">
+        <span className="text-slate-600 whitespace-nowrap">
           {row.validUntil ? format(new Date(row.validUntil), 'MMM d, yyyy') : '-'}
         </span>
       )
     },
     {
       header: 'Amount',
+      className: 'whitespace-nowrap text-right',
+      cellClassName: 'text-right',
       cell: (row: any) => (
-        <span className="font-semibold text-slate-900">
+        <span className="font-semibold text-slate-900 whitespace-nowrap">
           ₱{(parseFloat(row.grandTotal) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
       )
     },
     {
       header: 'Status',
+      className: 'whitespace-nowrap',
       cell: (row: { status: string; }) => <StatusBadge status={row.status} />
     },
     {
       header: 'Actions',
-      cell: (row: { status: any; convertedToInvoice: any; id?: string; quotationNumber?: string; clientName?: string; items?: any[]; subtotal?: number; discount?: number; total?: number; createdAt?: string | undefined; validUntil?: string | undefined; notes?: string | undefined; }) => (
+      className: 'whitespace-nowrap',
+      cell: (row: any) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
@@ -607,34 +610,34 @@ const filteredQuotations = quotations.filter((quotation: any) => {
               <span className="text-slate-500 text-sm font-medium">Quotations</span>
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-1">Quotation Management</h1>
-            <div className="hero-stat-row flex items-center gap-6 mt-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+            <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <FileCheck className="w-4 h-4 text-blue-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{quotations.length}</p>
-                  <p className="text-slate-500 text-xs">Total</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{quotations.length}</p>
+                  <p className="text-slate-500 text-xs truncate">Total</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{acceptedCount}</p>
-                  <p className="text-slate-500 text-xs">Accepted</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{acceptedCount}</p>
+                  <p className="text-slate-500 text-xs truncate">Accepted</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <Clock className="w-4 h-4 text-amber-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{pendingCount}</p>
-                  <p className="text-slate-500 text-xs">Pending</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{pendingCount}</p>
+                  <p className="text-slate-500 text-xs truncate">Pending</p>
                 </div>
               </div>
             </div>

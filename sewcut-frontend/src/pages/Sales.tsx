@@ -59,10 +59,8 @@ export function Sales() {
 
   const hasDateFilter = !!(advancedFilters.dateRange?.start && advancedFilters.dateRange?.end);
 
-  // ===== CHANGE 1: Derive real "All Time" start from data =====
   const defaultRangeEnd = endOfDay(new Date());
 
-  // find the earliest invoice date to anchor "All Time"
   const invoiceDates = invoices
     .map((inv) => new Date(inv.createdAt))
     .filter((d) => !isNaN(d.getTime()));
@@ -180,7 +178,6 @@ export function Sales() {
     return data;
   };
 
-  // ===== CHANGE 2: Add monthly-aggregation path =====
   const useMonthlyGranularity = windowDays > 62;
 
   const getMonthlySalesData = () => {
@@ -214,7 +211,6 @@ export function Sales() {
     return data;
   };
 
-  // ===== CHANGE 3: Use chartData with conditional granularity =====
   const chartData = useMonthlyGranularity ? getMonthlySalesData() : getDailySalesData();
 
   const animatedSales = useAnimatedValue(Math.round(totalSales));
@@ -238,34 +234,41 @@ export function Sales() {
     );
   };
 
+  // ===== FIXED COLUMNS WITH PROPER WIDTHS AND TRUNCATION =====
   const columns = [
     {
       header: 'Invoice',
+      className: 'min-w-[180px]',
+      cellClassName: 'min-w-[180px]',
       cell: (row: any) => (
-        <div>
-          <p className="font-semibold text-slate-900">{row.billingNumber}</p>
-          <p className="text-sm text-slate-500">{row.companyName}</p>
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-900 truncate max-w-[160px]">{row.billingNumber}</p>
+          <p className="text-sm text-slate-500 truncate max-w-[160px]">{row.companyName}</p>
         </div>
       )
     },
     {
       header: 'Date',
+      className: 'whitespace-nowrap',
       cell: (row: any) => (
-        <span className="text-slate-600">
+        <span className="text-slate-600 whitespace-nowrap">
           {row.createdAt ? format(new Date(row.createdAt), 'MMM d, yyyy') : '-'}
         </span>
       )
     },
     {
       header: 'Amount',
+      className: 'whitespace-nowrap text-right',
+      cellClassName: 'text-right',
       cell: (row: any) => (
-        <span className="font-semibold text-slate-900">
+        <span className="font-semibold text-slate-900 whitespace-nowrap">
           ₱{(row.grandTotal || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
       )
     },
     {
       header: 'Status',
+      className: 'whitespace-nowrap',
       cell: (row: { status: string; }) => <StatusBadge status={row.status} />
     }
   ];
@@ -302,106 +305,105 @@ export function Sales() {
               <span className="text-slate-500 text-sm font-medium">Sales Performance</span>
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-1">Sales Overview</h1>
-            <div className="hero-stat-row flex items-center gap-6 mt-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+            <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <DollarSign className="w-4 h-4 text-emerald-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">₱{animatedSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                  <p className="text-slate-500 text-xs">Total Sales</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">₱{animatedSales.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-slate-500 text-xs truncate">Total Sales</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <ShoppingCart className="w-4 h-4 text-blue-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{animatedTransactions}</p>
-                  <p className="text-slate-500 text-xs">Transactions</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{animatedTransactions}</p>
+                  <p className="text-slate-500 text-xs truncate">Transactions</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <TrendingUp className="w-4 h-4 text-amber-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">₱{animatedPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                  <p className="text-slate-500 text-xs">Pending</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">₱{animatedPending.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-slate-500 text-xs truncate">Pending</p>
                 </div>
               </div>
             </div>
           </div>
-              {/* Date Range Selector */}
-              <Popover onOpenChange={(open) => { if (!open) setShowCustomRange(false); }}>
-                <PopoverTrigger asChild>
-                  <Button size="lg" className="neu-inset rounded-xl px-4 py-3 text-slate-600 text-sm flex items-center gap-2 hover:text-slate-800 transition-colors">
-                    <Calendar className="w-4 h-4 text-slate-500" />
-                    <span>{rangeLabel}</span>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 rounded-2xl neu-surface-soft p-3" align="end">
-                  {!showCustomRange ? (
-                    <div className="space-y-1">
-                      {rangePresets.map((preset) => (
-                        <button
-                          key={preset.label}
-                          onClick={() => applyPreset(preset.getRange)}
-                          className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors text-slate-700"
-                        >
-                          {preset.label}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() => setShowCustomRange(true)}
-                        className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors text-slate-700"
-                      >
-                        Custom
-                      </button>
-                      <button
-                        onClick={clearDateRange}
-                        className={cn(
-                          "w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors font-medium",
-                          !hasDateFilter ? "text-amber-600" : "text-slate-700"
-                        )}
-                      >
-                        All Time
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Start Date</label>
-                        <Input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="mt-1 rounded-lg" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">End Date</label>
-                        <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="mt-1 rounded-lg" />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1 rounded-lg" onClick={() => setShowCustomRange(false)}>
-                          Back
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="flex-1 rounded-lg"
-                          onClick={() => {
-                            if (customStart && customEnd) {
-                              setAdvancedFilters(prev => ({ ...prev, dateRange: { start: customStart, end: customEnd } }));
-                            }
-                            setShowCustomRange(false);
-                          }}
-                        >
-                          Apply
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
+          <Popover onOpenChange={(open) => { if (!open) setShowCustomRange(false); }}>
+            <PopoverTrigger asChild>
+              <Button size="lg" className="neu-inset rounded-xl px-4 py-3 text-slate-600 dark:text-slate-300 text-sm flex items-center gap-2 hover:text-slate-800 dark:hover:text-slate-100 transition-colors w-full sm:w-auto justify-center sm:justify-start">
+                <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                <span>{rangeLabel}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 rounded-2xl neu-surface-soft p-3" align="end">
+              {!showCustomRange ? (
+                <div className="space-y-1">
+                  {rangePresets.map((preset) => (
+                    <button
+                      key={preset.label}
+                      onClick={() => applyPreset(preset.getRange)}
+                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors text-slate-700"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShowCustomRange(true)}
+                    className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors text-slate-700"
+                  >
+                    Custom
+                  </button>
+                  <button
+                    onClick={clearDateRange}
+                    className={cn(
+                      "w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors font-medium",
+                      !hasDateFilter ? "text-amber-600" : "text-slate-700"
+                    )}
+                  >
+                    All Time
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Start Date</label>
+                    <Input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="mt-1 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">End Date</label>
+                    <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="mt-1 rounded-lg" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1 rounded-lg" onClick={() => setShowCustomRange(false)}>
+                      Back
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 rounded-lg"
+                      onClick={() => {
+                        if (customStart && customEnd) {
+                          setAdvancedFilters(prev => ({ ...prev, dateRange: { start: customStart, end: customEnd } }));
+                        }
+                        setShowCustomRange(false);
+                      }}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -415,7 +417,6 @@ export function Sales() {
 
       {/* ===== STATS CARDS ===== */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Total Sales */}
         <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
@@ -445,7 +446,6 @@ export function Sales() {
           </CardContent>
         </Card>
 
-        {/* Pending Revenue */}
         <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
@@ -465,7 +465,6 @@ export function Sales() {
           </CardContent>
         </Card>
 
-        {/* Transactions */}
         <Card className="relative overflow-hidden neu-surface-soft group">
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
@@ -563,7 +562,7 @@ export function Sales() {
           <DataTable
             columns={columns}
             data={paidInvoices.slice(0, 10)}
-            emptyMessage="No sales in this period" isLoading={false}          />
+            emptyMessage="No sales in this period" isLoading={false} />
         </CardContent>
       </Card>
     </div>

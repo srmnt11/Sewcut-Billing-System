@@ -94,34 +94,34 @@ export function Settings() {
               <span className="text-slate-500 text-sm font-medium">Settings</span>
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-1">Application Settings</h1>
-            <div className="hero-stat-row flex items-center gap-6 mt-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+            <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <Building2 className="w-4 h-4 text-blue-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{filledCompanyFields}</p>
-                  <p className="text-slate-500 text-xs">Fields Set</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{filledCompanyFields}</p>
+                  <p className="text-slate-500 text-xs truncate">Fields Set</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <Bell className="w-4 h-4 text-amber-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{enabledNotifications}</p>
-                  <p className="text-slate-500 text-xs">Alerts On</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{enabledNotifications}</p>
+                  <p className="text-slate-500 text-xs truncate">Alerts On</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <SettingsIcon className="w-4 h-4 text-slate-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{settingsSections}</p>
-                  <p className="text-slate-500 text-xs">Sections</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{settingsSections}</p>
+                  <p className="text-slate-500 text-xs truncate">Sections</p>
                 </div>
               </div>
             </div>

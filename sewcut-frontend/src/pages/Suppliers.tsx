@@ -87,11 +87,6 @@ export function Suppliers() {
     queryFn: () => api.entities.Supplier.list('-createdAt')
   });
 
-  // type SupplierType = {
-  //   id: string;
-  //   [key: string]: any;
-  // };
-
   const createMutation = useMutation<any, unknown, any>({
     mutationFn: (data: any) => api.entities.Supplier.create(data),
     onSuccess: (result, variables) => {
@@ -209,23 +204,27 @@ export function Suppliers() {
   const activeSupplierCount = suppliers.filter((s: any) => s.status === 'active').length;
   const supplierCategoryCount = new Set(suppliers.map((s: any) => s.category).filter(Boolean)).size;
 
+  // ===== FIXED COLUMNS WITH PROPER WIDTHS AND TRUNCATION =====
   const columns = [
     {
       header: 'Supplier',
-      cell: (row: { name: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; contactPerson: any; }) => (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center">
+      className: 'min-w-[180px]',
+      cellClassName: 'min-w-[180px]',
+      cell: (row: { name: string; contactPerson: any; }) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
             <Package className="w-5 h-5 text-slate-500" />
           </div>
-          <div>
-            <p className="font-semibold text-slate-900">{row.name}</p>
-            <p className="text-sm text-slate-500">{row.contactPerson || 'No contact'}</p>
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-900 truncate max-w-[140px]">{row.name}</p>
+            <p className="text-sm text-slate-500 truncate max-w-[140px]">{row.contactPerson || 'No contact'}</p>
           </div>
         </div>
       )
     },
     {
       header: 'Category',
+      className: 'whitespace-nowrap',
       cell: (row: { category: string; }) => (
         <Badge className={categoryColors[row.category as keyof typeof categoryColors] || categoryColors.other}>
           {row.category?.charAt(0).toUpperCase() + row.category?.slice(1)}
@@ -234,18 +233,19 @@ export function Suppliers() {
     },
     {
       header: 'Contact',
-      cell: (row: { email: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; phone: string | number | boolean | React.ReactElement<any, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | null | undefined; }) => (
-        <div className="text-sm space-y-1">
+      className: 'min-w-[180px]',
+      cell: (row: { email: string; phone: string; }) => (
+        <div className="text-sm space-y-1 min-w-0">
           {row.email && (
-            <div className="flex items-center gap-2 text-slate-600">
-              <Mail className="w-3 h-3" />
-              {row.email}
+            <div className="flex items-center gap-2 text-slate-600 min-w-0">
+              <Mail className="w-3 h-3 shrink-0" />
+              <span className="truncate max-w-[160px]">{row.email}</span>
             </div>
           )}
           {row.phone && (
-            <div className="flex items-center gap-2 text-slate-600">
-              <Phone className="w-3 h-3" />
-              {row.phone}
+            <div className="flex items-center gap-2 text-slate-600 min-w-0">
+              <Phone className="w-3 h-3 shrink-0" />
+              <span className="truncate">{row.phone}</span>
             </div>
           )}
         </div>
@@ -253,19 +253,22 @@ export function Suppliers() {
     },
     {
       header: 'Location',
+      className: 'whitespace-nowrap',
       cell: (row: { city: any; country: any; }) => (
-        <div className="flex items-center gap-2 text-slate-600">
-          <MapPin className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center gap-2 text-slate-600 whitespace-nowrap">
+          <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
           {[row.city, row.country].filter(Boolean).join(', ') || '-'}
         </div>
       )
     },
     {
       header: 'Status',
+      className: 'whitespace-nowrap',
       cell: (row: { status: string; }) => <StatusBadge status={row.status} />
     },
     {
       header: 'Actions',
+      className: 'whitespace-nowrap',
       cell: (row: Supplier) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -312,34 +315,34 @@ export function Suppliers() {
               <span className="text-slate-500 text-sm font-medium">Suppliers</span>
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-1">Supplier Network</h1>
-            <div className="hero-stat-row flex items-center gap-6 mt-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+            <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <Truck className="w-4 h-4 text-blue-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{suppliers.length}</p>
-                  <p className="text-slate-500 text-xs">Total</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{suppliers.length}</p>
+                  <p className="text-slate-500 text-xs truncate">Total</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <TrendingUp className="w-4 h-4 text-emerald-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{activeSupplierCount}</p>
-                  <p className="text-slate-500 text-xs">Active</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{activeSupplierCount}</p>
+                  <p className="text-slate-500 text-xs truncate">Active</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <Package className="w-4 h-4 text-amber-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{supplierCategoryCount}</p>
-                  <p className="text-slate-500 text-xs">Categories</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{supplierCategoryCount}</p>
+                  <p className="text-slate-500 text-xs truncate">Categories</p>
                 </div>
               </div>
             </div>

@@ -54,7 +54,7 @@ import DataTable from '@/components/shared/DataTable';
 import StatusBadge from '@/components/shared/StatusBadge';
 import AdvancedFilter, { FilterConfig } from '@/components/shared/AdvancedFilter';
 import BulkActions from '@/components/shared/BulkActions';
-import SendEmailDialog from '@/components/billing/SendEmailDialog';
+import SendEmailDialog from '@/components/invoices/SendEmailDialog';
 
 type ReceiptStatus = 'Draft' | 'Issued';
 
@@ -750,6 +750,7 @@ export function DeliveryReceipts() {
     }
   };
 
+  // ===== FIXED COLUMNS WITH PROPER WIDTHS AND TRUNCATION =====
   const columns = [
     {
       header: (
@@ -773,29 +774,40 @@ export function DeliveryReceipts() {
     },
     {
       header: 'Delivery Receipt',
+      className: 'min-w-[180px]',
+      cellClassName: 'min-w-[180px]',
       cell: (row: DeliveryReceipt) => (
-        <div>
-          <p className="font-semibold text-slate-900">{row.receiptNumber}</p>
-          <p className="text-sm text-slate-500">{row.clientName}</p>
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-900 truncate max-w-[160px]">{row.receiptNumber}</p>
+          <p className="text-sm text-slate-500 truncate max-w-[160px]">{row.clientName}</p>
         </div>
       ),
     },
     {
       header: 'Delivery Date',
+      className: 'whitespace-nowrap',
       cell: (row: DeliveryReceipt) => (
-        <span className="text-slate-600">{row.deliveryDate ? format(new Date(row.deliveryDate), 'MMM d, yyyy') : '-'}</span>
+        <span className="text-slate-600 whitespace-nowrap">
+          {row.deliveryDate ? format(new Date(row.deliveryDate), 'MMM d, yyyy') : '-'}
+        </span>
       ),
     },
     {
       header: 'Items',
-      cell: (row: DeliveryReceipt) => <span className="font-semibold text-slate-900">{row.items?.length || 0}</span>,
+      className: 'whitespace-nowrap text-center',
+      cellClassName: 'text-center',
+      cell: (row: DeliveryReceipt) => (
+        <span className="font-semibold text-slate-900">{row.items?.length || 0}</span>
+      ),
     },
     {
       header: 'Status',
+      className: 'whitespace-nowrap',
       cell: (row: DeliveryReceipt) => <StatusBadge status={row.status} />,
     },
     {
       header: 'Actions',
+      className: 'whitespace-nowrap',
       cell: (row: DeliveryReceipt) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -875,34 +887,34 @@ export function DeliveryReceipts() {
               <span className="text-slate-500 text-sm font-medium">Logistics</span>
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-1">Delivery Receipt Management</h1>
-            <div className="hero-stat-row flex items-center gap-6 mt-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+            <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <FileText className="w-4 h-4 text-blue-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{totalReceipts}</p>
-                  <p className="text-slate-500 text-xs">Total</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{totalReceipts}</p>
+                  <p className="text-slate-500 text-xs truncate">Total</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <ClipboardCheck className="w-4 h-4 text-emerald-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{issuedCount}</p>
-                  <p className="text-slate-500 text-xs">Issued</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{issuedCount}</p>
+                  <p className="text-slate-500 text-xs truncate">Issued</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <Save className="w-4 h-4 text-amber-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{draftCount}</p>
-                  <p className="text-slate-500 text-xs">Drafts</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{draftCount}</p>
+                  <p className="text-slate-500 text-xs truncate">Drafts</p>
                 </div>
               </div>
             </div>
@@ -947,7 +959,7 @@ export function DeliveryReceipts() {
         filters={advancedFilters}
         onFilterChange={setAdvancedFilters}
         availableStatuses={['Draft', 'Issued']}
-        availableClients={clients.map((client: any) => ({ id: client.id, name: client.companyName || client.name || 'Unnamed Client' }))} // fixed
+        availableClients={clients.map((client: any) => ({ id: client.id, name: client.companyName || client.name || 'Unnamed Client' }))}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 compact-grid-5">
@@ -1008,7 +1020,6 @@ export function DeliveryReceipts() {
           </DialogHeader>
 
           <div className="space-y-6 mt-4">
-            {/* Auto-fill Section */}
             {!editingReceipt && (
               <div className="space-y-4 p-4 neu-inset rounded-xl">
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
@@ -1036,7 +1047,6 @@ export function DeliveryReceipts() {
               </div>
             )}
 
-            {/* Receipt Info */}
             <div className="space-y-4 p-4 neu-inset rounded-xl">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                 <ClipboardCheck className="w-4 h-4 text-emerald-500" />
@@ -1064,7 +1074,6 @@ export function DeliveryReceipts() {
               </div>
             </div>
 
-            {/* Client Information */}
             <div className="space-y-4 p-4 neu-inset rounded-xl">
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                 <Truck className="w-4 h-4 text-blue-500" />
@@ -1116,7 +1125,6 @@ export function DeliveryReceipts() {
               </div>
             </div>
 
-            {/* Line Items */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -1128,7 +1136,6 @@ export function DeliveryReceipts() {
                 </Button>
               </div>
               <div className="space-y-3">
-                {/* Column Headers */}
                 <div className="flex gap-2 items-center px-4">
                   <div className="flex-1">
                     <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Description</span>
@@ -1191,7 +1198,6 @@ export function DeliveryReceipts() {
               </div>
             </div>
 
-            {/* Notes */}
             <div>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
                 <FileText className="w-4 h-4 text-slate-400" />
@@ -1208,7 +1214,6 @@ export function DeliveryReceipts() {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="flex justify-between gap-3 pt-4 border-t border-white/60">
               <Button variant="outline" onClick={() => {
                 setShowForm(false);

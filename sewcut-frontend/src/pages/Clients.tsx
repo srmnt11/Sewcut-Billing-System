@@ -256,37 +256,37 @@ export function Clients() {
               <span className="text-slate-500 text-sm font-medium">Clients</span>
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-1">Client Management</h1>
-            <div className="hero-stat-row flex items-center gap-6 mt-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
-                  <Users className="w-4 h-4 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{clients.length}</p>
-                  <p className="text-slate-500 text-xs">Total Clients</p>
-                </div>
+          <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4 text-blue-500" />
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{activeClientCount}</p>
-                  <p className="text-slate-500 text-xs">Active</p>
-                </div>
-              </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
-                  <DollarSign className="w-4 h-4 text-amber-500" />
-                </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">₱{totalClientRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                  <p className="text-slate-500 text-xs">Revenue</p>
-                </div>
+              <div className="min-w-0">
+                <p className="text-slate-800 text-sm font-semibold truncate">{clients.length}</p>
+                <p className="text-slate-500 text-xs truncate">Total Clients</p>
               </div>
             </div>
+            <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-slate-800 text-sm font-semibold truncate">{activeClientCount}</p>
+                <p className="text-slate-500 text-xs truncate">Active</p>
+              </div>
+            </div>
+            <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
+                <DollarSign className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-slate-800 text-sm font-semibold truncate">₱{totalClientRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                <p className="text-slate-500 text-xs truncate">Revenue</p>
+              </div>
+            </div>
+          </div>
           </div>
           <Button
             size="lg"
