@@ -17,7 +17,7 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Calendar,
-  Zap
+  // Zap removed — unused import
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -105,9 +105,13 @@ export function Dashboard2() {
     return !isBefore(invDate, monthStart);
   });
 
-  const lastMonthInvoices = invoices.filter(inv => {
+  // ===== FIX 1: Compare like-for-like (same elapsed days) =====
+  const daysElapsedThisMonth = differenceInDays(now, monthStart) + 1;
+  const lastMonthComparableEnd = addDays(lastMonthStart, daysElapsedThisMonth - 1);
+
+  const lastMonthToDateInvoices = invoices.filter(inv => {
     const invDate = parseISO(inv.billingDate || inv.createdAt);
-    return !isBefore(invDate, lastMonthStart) && !isAfter(invDate, lastMonthEnd);
+    return !isBefore(invDate, lastMonthStart) && !isAfter(invDate, lastMonthComparableEnd);
   });
 
   const mtdRevenue = mtdInvoices.reduce((sum, inv) => {
@@ -119,7 +123,7 @@ export function Dashboard2() {
     return sum;
   }, 0);
 
-  const lastMonthRevenue = lastMonthInvoices.reduce((sum, inv) => {
+  const lastMonthToDateRevenue = lastMonthToDateInvoices.reduce((sum, inv) => {
     const amount = parseFloat(inv.grandTotal) || 0;
     const paymentType = inv.paymentType || 'downpayment';
     if (inv.status === 'Paid') return sum + amount;
@@ -128,21 +132,35 @@ export function Dashboard2() {
     return sum;
   }, 0);
 
-  const revenueGrowth = lastMonthRevenue > 0 
-    ? (((mtdRevenue - lastMonthRevenue) / lastMonthRevenue) * 100).toFixed(1)
+  // Now it's "first N days of this month" vs "first N days of last month"
+  const revenueGrowth = lastMonthToDateRevenue > 0 
+    ? (((mtdRevenue - lastMonthToDateRevenue) / lastMonthToDateRevenue) * 100).toFixed(1)
     : null;
 
+  // ===== FIX 2: Overdue invoices — add Partial Payment check =====
+  // Note: Partial Payment is included here since money is still owed past due date.
+  // If your business logic treats Partial Payment differently, adjust as needed.
   const overdueInvoices = invoices
     .filter(inv => {
       if (!inv.dueDate) return false;
       const dueDate = parseISO(inv.dueDate);
-      return isBefore(dueDate, now) && (inv.status === 'Sent' || inv.status === 'Pending');
+      // Include Partial Payment if the remaining balance is past due
+      return isBefore(dueDate, now) && 
+        (inv.status === 'Sent' || inv.status === 'Pending' || inv.status === 'Partial Payment');
     })
     .map(inv => ({
       ...inv,
       daysOverdue: differenceInDays(now, parseISO(inv.dueDate))
     }))
     .sort((a, b) => b.daysOverdue - a.daysOverdue);
+
+  // ===== FIX 3: Expiring quotations — bound on both sides =====
+  const expiringQuotations = quotations.filter(q => 
+    q.status === 'Sent' && 
+    q.validUntil && 
+    isAfter(parseISO(q.validUntil), now) &&                 // hasn't expired yet
+    isBefore(parseISO(q.validUntil), addDays(now, 7))        // expires within 7 days
+  ).length;
 
   // Revenue area chart (last 6 months)
   const revenueData = [];
@@ -218,9 +236,7 @@ export function Dashboard2() {
   partialPaymentCount > 0 && alerts.push({
     type: 'pending', title: `${partialPaymentCount} In Progress`, message: '50% received, ready to fulfill'
   });
-  const expiringQuotations = quotations.filter(q => 
-    q.status === 'Sent' && q.validUntil && isAfter(addDays(new Date(), 7), parseISO(q.validUntil))
-  ).length;
+  // Use the fixed expiringQuotations variable
   expiringQuotations > 0 && alerts.push({
     type: 'expiring', title: `${expiringQuotations} Quotation${expiringQuotations > 1 ? 's' : ''} Expiring`, message: 'Within 7 days'
   });
@@ -378,7 +394,7 @@ export function Dashboard2() {
                             {parseFloat(revenueGrowth) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
                             {Math.abs(parseFloat(revenueGrowth)) > 999 ? '>999' : Math.abs(parseFloat(revenueGrowth))}%
                           </span>
-                          <span className="text-slate-500 text-xs">vs last month</span>
+                          <span className="text-slate-500 text-xs">vs same point last month</span>
                         </>
                       ) : (
                         <span className="text-slate-500 text-xs">No data for last month</span>

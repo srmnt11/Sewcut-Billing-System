@@ -2,8 +2,16 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { format, subDays, startOfDay, endOfDay, addDays, differenceInCalendarDays, isWithinInterval } from 'date-fns';
-import { DollarSign, TrendingUp, TrendingDown, ShoppingCart, BarChart3, Calendar } from 'lucide-react';
+import { 
+  format, subDays, startOfDay, endOfDay, addDays, 
+  differenceInCalendarDays, isWithinInterval, subMonths, 
+  subYears, startOfYear, startOfMonth, endOfMonth, addMonths 
+} from 'date-fns';
+import { DollarSign, TrendingUp, TrendingDown, ShoppingCart, BarChart3, Calendar, ChevronDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   XAxis,
   YAxis,
@@ -49,21 +57,56 @@ export function Sales() {
     queryFn: () => api.entities.Billing.list('-createdAt')
   });
 
-  const defaultRangeEnd = endOfDay(new Date());
-  const defaultRangeStart = startOfDay(subDays(defaultRangeEnd, 29));
+  const hasDateFilter = !!(advancedFilters.dateRange?.start && advancedFilters.dateRange?.end);
 
-  const activeRangeStart = advancedFilters.dateRange?.start
-    ? startOfDay(new Date(advancedFilters.dateRange.start))
-    : defaultRangeStart;
-  const activeRangeEnd = advancedFilters.dateRange?.end
-    ? endOfDay(new Date(advancedFilters.dateRange.end))
+  // ===== CHANGE 1: Derive real "All Time" start from data =====
+  const defaultRangeEnd = endOfDay(new Date());
+
+  // find the earliest invoice date to anchor "All Time"
+  const invoiceDates = invoices
+    .map((inv) => new Date(inv.createdAt))
+    .filter((d) => !isNaN(d.getTime()));
+  const earliestInvoiceDate = invoiceDates.length
+    ? new Date(Math.min(...invoiceDates.map((d) => d.getTime())))
+    : subDays(defaultRangeEnd, 29);
+
+  const activeRangeStart = hasDateFilter
+    ? startOfDay(new Date(advancedFilters.dateRange!.start))
+    : startOfDay(earliestInvoiceDate);
+  const activeRangeEnd = hasDateFilter
+    ? endOfDay(new Date(advancedFilters.dateRange!.end))
     : defaultRangeEnd;
+
+  const [showCustomRange, setShowCustomRange] = useState(false);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+
+  const rangePresets = [
+    { label: '7D', getRange: () => ({ start: subDays(new Date(), 6), end: new Date() }) },
+    { label: '1M', getRange: () => ({ start: subMonths(new Date(), 1), end: new Date() }) },
+    { label: '3M', getRange: () => ({ start: subMonths(new Date(), 3), end: new Date() }) },
+    { label: '6M', getRange: () => ({ start: subMonths(new Date(), 6), end: new Date() }) },
+    { label: 'YTD', getRange: () => ({ start: startOfYear(new Date()), end: new Date() }) },
+    { label: '1Y', getRange: () => ({ start: subYears(new Date(), 1), end: new Date() }) },
+  ];
+
+  const applyPreset = (getRange: () => { start: Date; end: Date }) => {
+    const { start, end } = getRange();
+    setAdvancedFilters(prev => ({
+      ...prev,
+      dateRange: { start: format(start, 'yyyy-MM-dd'), end: format(end, 'yyyy-MM-dd') }
+    }));
+  };
+
+  const clearDateRange = () => {
+    setAdvancedFilters(prev => ({ ...prev, dateRange: undefined }));
+  };
 
   const filteredInvoices = invoices.filter(inv => {
     const createdAt = new Date(inv.createdAt);
     const amount = parseFloat(inv.grandTotal) || 0;
 
-    const matchesDateRange = isWithinInterval(createdAt, { start: activeRangeStart, end: activeRangeEnd });
+    const matchesDateRange = !hasDateFilter || isWithinInterval(createdAt, { start: activeRangeStart, end: activeRangeEnd });
     const matchesStatus = !advancedFilters.status?.length || advancedFilters.status.includes(inv.status);
     const matchesAmountRange = !advancedFilters.amountRange ||
       (amount >= advancedFilters.amountRange.min && amount <= advancedFilters.amountRange.max);
@@ -137,12 +180,49 @@ export function Sales() {
     return data;
   };
 
+  // ===== CHANGE 2: Add monthly-aggregation path =====
+  const useMonthlyGranularity = windowDays > 62;
+
+  const getMonthlySalesData = () => {
+    const data = [];
+    let cursor = startOfMonth(activeRangeStart);
+    const rangeEndMonth = startOfMonth(activeRangeEnd);
+
+    while (cursor <= rangeEndMonth) {
+      const monthStart = cursor;
+      const monthEnd = endOfMonth(cursor);
+      const monthInvoices = paidInvoices.filter((inv) =>
+        isWithinInterval(new Date(inv.createdAt), {
+          start: monthStart < activeRangeStart ? activeRangeStart : monthStart,
+          end: monthEnd > activeRangeEnd ? activeRangeEnd : monthEnd,
+        })
+      );
+      data.push({
+        date: format(cursor, 'MMM yyyy'),
+        sales: monthInvoices.reduce((sum, inv) => {
+          const amount = parseFloat(inv.grandTotal) || 0;
+          const paymentType = inv.paymentType || 'downpayment';
+          if (inv.status === 'Paid') return sum + amount;
+          if (inv.status === 'Delivered') return sum + (paymentType === 'downpayment' ? amount * 0.5 : 0);
+          if (inv.status === 'Partial Payment') return sum + (amount * 0.5);
+          return sum;
+        }, 0),
+        count: monthInvoices.length,
+      });
+      cursor = addMonths(cursor, 1);
+    }
+    return data;
+  };
+
+  // ===== CHANGE 3: Use chartData with conditional granularity =====
+  const chartData = useMonthlyGranularity ? getMonthlySalesData() : getDailySalesData();
+
   const animatedSales = useAnimatedValue(Math.round(totalSales));
   const animatedPending = useAnimatedValue(Math.round(pendingAmount));
   const animatedTransactions = useAnimatedValue(paidInvoices.length);
   const maxAmount = Math.max(...invoices.map((inv: any) => parseFloat(inv.grandTotal) || 0), 100000);
 
-  const rangeLabel = `${format(activeRangeStart, 'MMM d, yyyy')} - ${format(activeRangeEnd, 'MMM d, yyyy')}`;
+  const rangeLabel = hasDateFilter ? `${format(activeRangeStart, 'MMM d, yyyy')} - ${format(activeRangeEnd, 'MMM d, yyyy')}` : 'All Time';
 
   const ChartTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
@@ -206,6 +286,7 @@ export function Sales() {
 
   return (
     <div className="space-y-6">
+      
       {/* ===== HERO HEADER ===== */}
       <div className="relative neu-hero overflow-hidden">
         <div className="absolute inset-0 overflow-hidden">
@@ -253,10 +334,74 @@ export function Sales() {
               </div>
             </div>
           </div>
-          <div className="neu-inset rounded-xl px-4 py-3 text-slate-600 text-sm flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-slate-500" />
-            <span>{rangeLabel}</span>
-          </div>
+              {/* Date Range Selector */}
+              <Popover onOpenChange={(open) => { if (!open) setShowCustomRange(false); }}>
+                <PopoverTrigger asChild>
+                  <Button size="lg" className="neu-inset rounded-xl px-4 py-3 text-slate-600 text-sm flex items-center gap-2 hover:text-slate-800 transition-colors">
+                    <Calendar className="w-4 h-4 text-slate-500" />
+                    <span>{rangeLabel}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 rounded-2xl neu-surface-soft p-3" align="end">
+                  {!showCustomRange ? (
+                    <div className="space-y-1">
+                      {rangePresets.map((preset) => (
+                        <button
+                          key={preset.label}
+                          onClick={() => applyPreset(preset.getRange)}
+                          className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors text-slate-700"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => setShowCustomRange(true)}
+                        className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors text-slate-700"
+                      >
+                        Custom
+                      </button>
+                      <button
+                        onClick={clearDateRange}
+                        className={cn(
+                          "w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors font-medium",
+                          !hasDateFilter ? "text-amber-600" : "text-slate-700"
+                        )}
+                      >
+                        All Time
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Start Date</label>
+                        <Input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="mt-1 rounded-lg" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">End Date</label>
+                        <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="mt-1 rounded-lg" />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1 rounded-lg" onClick={() => setShowCustomRange(false)}>
+                          Back
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1 rounded-lg"
+                          onClick={() => {
+                            if (customStart && customEnd) {
+                              setAdvancedFilters(prev => ({ ...prev, dateRange: { start: customStart, end: customEnd } }));
+                            }
+                            setShowCustomRange(false);
+                          }}
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
         </div>
       </div>
 
@@ -265,6 +410,7 @@ export function Sales() {
         onFilterChange={setAdvancedFilters}
         availableStatuses={['Pending', 'Sent', 'Partial Payment', 'Delivered', 'Paid', 'Cancelled']}
         maxAmount={maxAmount}
+        showDateRange={false}
       />
 
       {/* ===== STATS CARDS ===== */}
@@ -364,7 +510,7 @@ export function Sales() {
           <div className="h-80 mt-2">
             <ResponsiveContainer width="100%" height="100%">
               {chartMode === 'amount' ? (
-                <AreaChart data={getDailySalesData()}>
+                <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorSalesAmount" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
@@ -372,15 +518,29 @@ export function Sales() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
-                  <XAxis dataKey="date" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} interval={Math.max(0, Math.floor(windowDays / 10))} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke={chartAxisColor} 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    interval={useMonthlyGranularity ? 0 : Math.max(0, Math.floor(windowDays / 10))} 
+                  />
                   <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `₱${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
                   <Tooltip content={<ChartTooltip />} cursor={{ fill: chartHoverCursor }} />
                   <Area type="monotone" dataKey="sales" stroke="#f59e0b" strokeWidth={2.5} fill="url(#colorSalesAmount)" name="Sales" />
                 </AreaChart>
               ) : (
-                <BarChart data={getDailySalesData()}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
-                  <XAxis dataKey="date" stroke={chartAxisColor} fontSize={12} tickLine={false} axisLine={false} interval={Math.max(0, Math.floor(windowDays / 10))} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke={chartAxisColor} 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    interval={useMonthlyGranularity ? 0 : Math.max(0, Math.floor(windowDays / 10))} 
+                  />
                   <YAxis stroke={chartAxisColor} fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip content={<ChartTooltip />} cursor={{ fill: chartHoverCursor }} />
                   <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} name="Transactions" barSize={20} />

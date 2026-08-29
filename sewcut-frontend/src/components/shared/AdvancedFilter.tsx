@@ -41,6 +41,7 @@ interface AdvancedFilterProps {
   availablePaymentTypes?: Array<{ value: string; label: string }>;
   maxAmount?: number;
   showPaymentType?: boolean;
+  showDateRange?: boolean;
 }
 
 export default function AdvancedFilter({
@@ -54,7 +55,8 @@ export default function AdvancedFilter({
     { value: 'full', label: 'Full Payment' }
   ],
   maxAmount = 100000,
-  showPaymentType = false
+  showPaymentType = false,
+  showDateRange = true
 }: AdvancedFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [localFilters, setLocalFilters] = useState<FilterConfig>(filters);
@@ -184,6 +186,7 @@ export default function AdvancedFilter({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 
               {/* Date Range Filter */}
+              {showDateRange && (
               <Popover>
                 <PopoverTrigger asChild>
                   <Button 
@@ -252,7 +255,8 @@ export default function AdvancedFilter({
                   </div>
                 </PopoverContent>
               </Popover>
-
+              )}
+              
               {/* Amount Range Filter */}
               <Popover>
                 <PopoverTrigger asChild>

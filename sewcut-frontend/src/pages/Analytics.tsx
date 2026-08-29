@@ -18,9 +18,16 @@ import {
   Area,
   AreaChart
 } from 'recharts';
-import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subDays } from 'date-fns';
-import { TrendingUp, TrendingDown, DollarSign, FileText, Users, BarChart3, PieChart as PieChartIcon, Target, ArrowRight, Calendar } from 'lucide-react';
+import { 
+  format, subMonths, addMonths, startOfMonth, endOfMonth, 
+  isWithinInterval, startOfDay, endOfDay, subDays, subYears, startOfYear 
+} from 'date-fns';
+import { TrendingUp, TrendingDown, DollarSign, FileText, Users, BarChart3, PieChart as PieChartIcon, Target, ArrowRight, Calendar, ChevronDown } from 'lucide-react';
 import AdvancedFilter, { FilterConfig } from '@/components/shared/AdvancedFilter';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const STATUS_COLORS: Record<string, string> = {
   Draft: '#94a3b8',
@@ -72,21 +79,44 @@ export function Analytics() {
 
   const isLoading = loadingInvoices || loadingQuotations || loadingClients;
 
-  const defaultRangeEnd = endOfDay(new Date());
-  const defaultRangeStart = startOfDay(subDays(defaultRangeEnd, 29));
+  const hasDateFilter = !!(advancedFilters.dateRange?.start && advancedFilters.dateRange?.end);
+  const activeRangeStart = hasDateFilter
+    ? startOfDay(new Date(advancedFilters.dateRange!.start))
+    : null;
+  const activeRangeEnd = hasDateFilter
+    ? endOfDay(new Date(advancedFilters.dateRange!.end))
+    : null;
 
-  const activeRangeStart = advancedFilters.dateRange?.start
-    ? startOfDay(new Date(advancedFilters.dateRange.start))
-    : defaultRangeStart;
-  const activeRangeEnd = advancedFilters.dateRange?.end
-    ? endOfDay(new Date(advancedFilters.dateRange.end))
-    : defaultRangeEnd;
+  const [showCustomRange, setShowCustomRange] = useState(false);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+
+  const rangePresets = [
+    { label: '7D', getRange: () => ({ start: subDays(new Date(), 6), end: new Date() }) },
+    { label: '1M', getRange: () => ({ start: subMonths(new Date(), 1), end: new Date() }) },
+    { label: '3M', getRange: () => ({ start: subMonths(new Date(), 3), end: new Date() }) },
+    { label: '6M', getRange: () => ({ start: subMonths(new Date(), 6), end: new Date() }) },
+    { label: 'YTD', getRange: () => ({ start: startOfYear(new Date()), end: new Date() }) },
+    { label: '1Y', getRange: () => ({ start: subYears(new Date(), 1), end: new Date() }) },
+  ];
+
+  const applyPreset = (getRange: () => { start: Date; end: Date }) => {
+    const { start, end } = getRange();
+    setAdvancedFilters(prev => ({
+      ...prev,
+      dateRange: { start: format(start, 'yyyy-MM-dd'), end: format(end, 'yyyy-MM-dd') }
+    }));
+  };
+
+  const clearDateRange = () => {
+    setAdvancedFilters(prev => ({ ...prev, dateRange: undefined }));
+  };
 
   const filteredInvoices = invoices.filter(inv => {
     const createdAt = new Date(inv.createdAt);
     const amount = parseFloat(inv.grandTotal) || 0;
 
-    const matchesDateRange = isWithinInterval(createdAt, { start: activeRangeStart, end: activeRangeEnd });
+    const matchesDateRange = !hasDateFilter || isWithinInterval(createdAt, { start: activeRangeStart!, end: activeRangeEnd! });
     const matchesStatus = !advancedFilters.status?.length || advancedFilters.status.includes(inv.status);
     const matchesAmountRange = !advancedFilters.amountRange ||
       (amount >= advancedFilters.amountRange.min && amount <= advancedFilters.amountRange.max);
@@ -98,24 +128,37 @@ export function Analytics() {
     const createdAt = new Date(q.createdAt);
     const amount = parseFloat(q.grandTotal) || 0;
 
-    const matchesDateRange = isWithinInterval(createdAt, { start: activeRangeStart, end: activeRangeEnd });
+    const matchesDateRange = !hasDateFilter || isWithinInterval(createdAt, { start: activeRangeStart!, end: activeRangeEnd! });
     const matchesAmountRange = !advancedFilters.amountRange ||
       (amount >= advancedFilters.amountRange.min && amount <= advancedFilters.amountRange.max);
 
     return matchesDateRange && matchesAmountRange;
   });
 
-  const maxAmount = Math.max(...invoices.map((inv: any) => parseFloat(inv.grandTotal) || 0), 100000);
-  const rangeLabel = `${format(activeRangeStart, 'MMM d, yyyy')} - ${format(activeRangeEnd, 'MMM d, yyyy')}`;
+  // ===== CHANGE 1: Compute real chart range =====
+  const invoiceDates = invoices
+    .map((inv) => new Date(inv.createdAt))
+    .filter((d) => !isNaN(d.getTime()));
+  const earliestInvoiceDate = invoiceDates.length
+    ? new Date(Math.min(...invoiceDates.map((d) => d.getTime())))
+    : subMonths(new Date(), 5);
 
-  // Calculate monthly revenue data
+  const chartRangeStart = hasDateFilter ? activeRangeStart! : startOfMonth(earliestInvoiceDate);
+  const chartRangeEnd = hasDateFilter ? activeRangeEnd! : endOfDay(new Date());
+
+  const maxAmount = Math.max(...invoices.map((inv: any) => parseFloat(inv.grandTotal) || 0), 100000);
+  const rangeLabel = hasDateFilter ? `${format(activeRangeStart!, 'MMM d, yyyy')} - ${format(activeRangeEnd!, 'MMM d, yyyy')}` : 'All Time';
+
+  // ===== CHANGE 2: Rewrite getMonthlyData() to iterate actual range =====
   const getMonthlyData = () => {
     const months = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = subMonths(new Date(), i);
-      const start = startOfMonth(date);
-      const end = endOfMonth(date);
-      
+    let cursor = startOfMonth(chartRangeStart);
+    const rangeEndMonth = startOfMonth(chartRangeEnd);
+
+    while (cursor <= rangeEndMonth) {
+      const start = cursor < chartRangeStart ? chartRangeStart : cursor;
+      const end = endOfMonth(cursor) > chartRangeEnd ? chartRangeEnd : endOfMonth(cursor);
+
       const monthInvoices = filteredInvoices.filter(inv => {
         const invDate = new Date(inv.createdAt);
         return isWithinInterval(invDate, { start, end });
@@ -135,11 +178,13 @@ export function Analytics() {
         .reduce((sum, inv) => sum + (parseFloat(inv.grandTotal) || 0), 0);
 
       months.push({
-        name: format(date, 'MMM'),
+        name: format(cursor, 'MMM yyyy'),
         revenue,
         pending,
         count: monthInvoices.length
       });
+
+      cursor = addMonths(cursor, 1);
     }
     return months;
   };
@@ -203,7 +248,7 @@ export function Analytics() {
     return sum;
   }, 0);
   // Compare current month vs last month
-  const now = activeRangeEnd;
+  const now = activeRangeEnd || endOfDay(new Date());
   const thisMonthStart = startOfMonth(now);
   const lastMonthStart = startOfMonth(subMonths(now, 1));
   const lastMonthEnd = endOfMonth(subMonths(now, 1));
@@ -294,51 +339,116 @@ export function Analytics() {
           <div className="absolute top-1/2 left-1/4 w-64 h-64 bg-white/40 rounded-full blur-2xl animate-orb3" />
           <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
-        <div className="relative z-10 px-8 py-8">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <BarChart3 className="w-5 h-5 text-slate-500" />
-                <span className="text-slate-500 text-sm font-medium">Analytics & Insights</span>
-              </div>
-              <h1 className="text-3xl font-bold text-slate-800 mb-1">Business Analytics</h1>
+        <div className="relative z-10 px-8 py-8 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <BarChart3 className="w-5 h-5 text-slate-500" />
+              <span className="text-slate-500 text-sm font-medium">Analytics & Insights</span>
             </div>
-            <div className="neu-inset rounded-xl px-4 py-3 text-slate-600 text-sm flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-slate-500" />
-              <span>{rangeLabel}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-6 mt-5">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 neu-press flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-emerald-500" />
+            <h1 className="text-3xl font-bold text-slate-800 mb-1">Business Analytics</h1>
+
+            {/* Stats Row */}
+            <div className="flex items-center gap-6 mt-5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-emerald-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">₱{animatedRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                  <p className="text-slate-500 text-xs">Total Revenue</p>
+                </div>
               </div>
-              <div>
-                <p className="text-slate-800 text-sm font-semibold">₱{animatedRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                <p className="text-slate-500 text-xs">Total Revenue</p>
+              <div className="w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{animatedInvoices}</p>
+                  <p className="text-slate-500 text-xs">Filtered Invoices</p>
+                </div>
               </div>
-            </div>
-            <div className="w-px h-8 bg-white/60" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 neu-press flex items-center justify-center">
-                <FileText className="w-4 h-4 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-slate-800 text-sm font-semibold">{animatedInvoices}</p>
-                <p className="text-slate-500 text-xs">Filtered Invoices</p>
-              </div>
-            </div>
-            <div className="w-px h-8 bg-white/60" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 neu-press flex items-center justify-center">
-                <Users className="w-4 h-4 text-amber-500" />
-              </div>
-              <div>
-                <p className="text-slate-800 text-sm font-semibold">{animatedClients}</p>
-                <p className="text-slate-500 text-xs">Active Clients</p>
+              <div className="w-px h-8 bg-white/60" />
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 neu-press flex items-center justify-center">
+                  <Users className="w-4 h-4 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{animatedClients}</p>
+                  <p className="text-slate-500 text-xs">Active Clients</p>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Date Range Selector */}
+          <Popover onOpenChange={(open) => { if (!open) setShowCustomRange(false); }}>
+            <PopoverTrigger asChild>
+              <Button size="lg" className="neu-inset rounded-xl px-4 py-3 text-slate-600 text-sm flex items-center gap-2 hover:text-slate-800 transition-colors">
+                <Calendar className="w-4 h-4 text-slate-500" />
+                <span>{rangeLabel}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 rounded-2xl neu-surface-soft p-3" align="end">
+              {!showCustomRange ? (
+                <div className="space-y-1">
+                  {rangePresets.map((preset) => (
+                    <button
+                      key={preset.label}
+                      onClick={() => applyPreset(preset.getRange)}
+                      className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors text-slate-700"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setShowCustomRange(true)}
+                    className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors text-slate-700"
+                  >
+                    Custom
+                  </button>
+                  <button
+                    onClick={clearDateRange}
+                    className={cn(
+                      "w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-slate-100/70 dark:hover:bg-slate-800/55 transition-colors font-medium",
+                      !hasDateFilter ? "text-amber-600" : "text-slate-700"
+                    )}
+                  >
+                    All Time
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">Start Date</label>
+                    <Input type="date" value={customStart} onChange={(e) => setCustomStart(e.target.value)} className="mt-1 rounded-lg" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">End Date</label>
+                    <Input type="date" value={customEnd} onChange={(e) => setCustomEnd(e.target.value)} className="mt-1 rounded-lg" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1 rounded-lg" onClick={() => setShowCustomRange(false)}>
+                      Back
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 rounded-lg"
+                      onClick={() => {
+                        if (customStart && customEnd) {
+                          setAdvancedFilters(prev => ({ ...prev, dateRange: { start: customStart, end: customEnd } }));
+                        }
+                        setShowCustomRange(false);
+                      }}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
@@ -347,6 +457,7 @@ export function Analytics() {
         onFilterChange={setAdvancedFilters}
         availableStatuses={['Draft', 'Pending', 'Sent', 'Partial Payment', 'Delivered', 'Paid']}
         maxAmount={maxAmount}
+        showDateRange={false}
       />
 
       {/* ===== STATS CARDS ===== */}
