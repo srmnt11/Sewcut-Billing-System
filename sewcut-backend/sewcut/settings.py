@@ -36,10 +36,13 @@ def env_str(name, default=''):
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY: read sensitive settings from environment when available
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-t3#%grsz7&cbslls-79q+h-3-i2cg(q^3r@&v^%4ob)72%&%d#')
+SECRET_KEY = env_str('SECRET_KEY')
+
+if not SECRET_KEY:
+    raise RuntimeError('SECRET_KEY environment variable is required')
 
 # DEBUG should be False in production. Set environment var to 'True' to enable.
-DEBUG = env_bool('DEBUG', True)
+DEBUG = env_bool('DEBUG', False)
 
 # ALLOWED_HOSTS can be provided as a comma-separated env var
 ALLOWED_HOSTS = env_csv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
@@ -194,18 +197,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
 # CORS Settings
-# If CORS_ALLOWED_ORIGINS is provided as a comma-separated env var, use it;
-# otherwise fall back to allowing all origins (safer to set explicit origins in prod).
-cors_env = os.environ.get('CORS_ALLOWED_ORIGINS')
-if cors_env:
-    CORS_ALLOWED_ORIGINS = env_csv('CORS_ALLOWED_ORIGINS')
-    CORS_ALLOW_ALL_ORIGINS = False
-else:
-    CORS_ALLOW_ALL_ORIGINS = True
+# Explicit allowlist with development defaults
+CORS_ALLOWED_ORIGINS = env_csv(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:5173,http://127.0.0.1:5173'
+)
+
+# Never allow all origins in production
+CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOW_CREDENTIALS = env_bool('CORS_ALLOW_CREDENTIALS', True)
 
-# Needed for secure admin/login flows behind HTTPS proxies.
+# CSRF trusted origins for secure forms/login
 CSRF_TRUSTED_ORIGINS = env_csv('CSRF_TRUSTED_ORIGINS')
 
 # REST Framework Settings
@@ -313,4 +316,3 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.environ.get('SECURE_HSTS_SECONDS', 31536000))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', True)
     SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', True)
-
