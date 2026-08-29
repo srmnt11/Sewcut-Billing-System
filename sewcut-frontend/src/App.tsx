@@ -22,6 +22,7 @@ import { History } from './pages/History';
 import { DeliveryReceipts } from './pages/DeliveryReceipts';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 const queryClient = new QueryClient();
 
@@ -128,6 +129,7 @@ export function App() {
           </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
+      <SpeedInsights />
     </QueryClientProvider>
   );
 }
