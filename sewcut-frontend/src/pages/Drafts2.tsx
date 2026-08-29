@@ -99,69 +99,69 @@ export function Drafts2() {
           <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, #94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
         </div>
         <div className="relative z-10 hero-content px-4 py-6 sm:px-6 sm:py-7 lg:px-8 lg:py-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1">
               <FileEdit className="w-5 h-5 text-slate-500" />
               <span className="text-slate-500 text-sm font-medium">Drafts</span>
             </div>
             <h1 className="text-3xl font-bold text-slate-800 mb-1">Saved Drafts</h1>
-            <div className="hero-stat-row flex items-center gap-6 mt-5">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+            <div className="hero-stat-row flex flex-wrap items-center gap-x-6 gap-y-3 mt-5">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <FileEdit className="w-4 h-4 text-slate-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{drafts.length}</p>
-                  <p className="text-slate-500 text-xs">Total Drafts</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{drafts.length}</p>
+                  <p className="text-slate-500 text-xs truncate">Total Drafts</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <FileText className="w-4 h-4 text-blue-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{invoiceDrafts.length}</p>
-                  <p className="text-slate-500 text-xs">Invoice Drafts</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{invoiceDrafts.length}</p>
+                  <p className="text-slate-500 text-xs truncate">Invoice Drafts</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <FileCheck className="w-4 h-4 text-amber-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{quotationDrafts.length}</p>
-                  <p className="text-slate-500 text-xs">Quotation Drafts</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{quotationDrafts.length}</p>
+                  <p className="text-slate-500 text-xs truncate">Quotation Drafts</p>
                 </div>
               </div>
-              <div className="hero-divider w-px h-8 bg-white/60" />
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 neu-press flex items-center justify-center">
+              <div className="hero-divider w-px h-8 bg-white/60 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-8 h-8 neu-press flex items-center justify-center shrink-0">
                   <Truck className="w-4 h-4 text-cyan-500" />
                 </div>
-                <div>
-                  <p className="text-slate-800 text-sm font-semibold">{deliveryReceiptDrafts.length}</p>
-                  <p className="text-slate-500 text-xs">DR Drafts</p>
+                <div className="min-w-0">
+                  <p className="text-slate-800 text-sm font-semibold truncate">{deliveryReceiptDrafts.length}</p>
+                  <p className="text-slate-500 text-xs truncate">DR Drafts</p>
                 </div>
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap gap-3 w-full sm:w-auto shrink-0">
             <Link to={createPageUrl('Billing')} className="flex-1 sm:flex-none">
-              <Button size="lg" className="w-full sm:w-auto text-slate-700">
+              <Button size="lg" className="w-full sm:w-auto text-slate-700 whitespace-nowrap">
                 <FileText className="w-4 h-4 mr-2" />
                 New Invoice
               </Button>
             </Link>
             <Link to={createPageUrl('Quotations')} className="flex-1 sm:flex-none">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-slate-700">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-slate-700 whitespace-nowrap">
                 <FileCheck className="w-4 h-4 mr-2" />
                 New Quotation
               </Button>
             </Link>
             <Link to={createPageUrl('DeliveryReceipts')} className="flex-1 sm:flex-none">
-              <Button size="lg" variant="outline" className="w-full sm:w-auto text-slate-700">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto text-slate-700 whitespace-nowrap">
                 <Truck className="w-4 h-4 mr-2" />
                 New Delivery Receipt
               </Button>
